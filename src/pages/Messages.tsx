@@ -1,0 +1,328 @@
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Search,
+  Send,
+  Paperclip,
+  MoreVertical,
+  Phone,
+  Video,
+  Info,
+  Check,
+  CheckCheck,
+  Image,
+  File,
+  Smile
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { messagesApi } from '@/lib/api';
+import type { Conversation, Message } from '@/types';
+import { cn } from '@/lib/utils';
+
+export default function Messages() {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentUserId = 'user_1'; // Mock current user
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const data = await messagesApi.getConversations();
+        setConversations(data);
+        if (data.length > 0) {
+          setSelectedConversation(data[0]);
+        }
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadConversations();
+  }, []);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      const loadMessages = async () => {
+        try {
+          const data = await messagesApi.getMessages(selectedConversation.id);
+          setMessages(data);
+        } catch (error) {
+          console.error('Failed to load messages:', error);
+        }
+      };
+      loadMessages();
+    }
+  }, [selectedConversation]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation) return;
+
+    const message = await messagesApi.sendMessage(selectedConversation.id, newMessage);
+    setMessages([...messages, message]);
+    setNewMessage('');
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString();
+  };
+
+  const getOtherParticipant = (conversation: Conversation) => {
+    return conversation.participants.find(p => p.id !== currentUserId);
+  };
+
+  const filteredConversations = conversations.filter(conv => {
+    const other = getOtherParticipant(conv);
+    return other?.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  return (
+    <div className="min-h-screen bg-background pt-16">
+      <div className="h-[calc(100vh-4rem)] flex">
+        {/* Conversations List */}
+        <div className={cn(
+          "w-full md:w-80 border-r flex flex-col",
+          selectedConversation && "hidden md:flex"
+        )}>
+          {/* Header */}
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-bold mb-4">Messages</h1>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search conversations..."
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Conversations */}
+          <ScrollArea className="flex-1">
+            {filteredConversations.map((conversation) => {
+              const other = getOtherParticipant(conversation);
+              const isSelected = selectedConversation?.id === conversation.id;
+
+              return (
+                <button
+                  key={conversation.id}
+                  onClick={() => setSelectedConversation(conversation)}
+                  className={cn(
+                    "w-full p-4 flex items-start gap-3 hover:bg-muted/50 transition-colors text-left",
+                    isSelected && "bg-muted"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar>
+                      <AvatarImage src={other?.avatar} alt={other?.name} />
+                      <AvatarFallback>{other?.name?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {conversation.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                        {conversation.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium truncate">{other?.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {conversation.lastMessage && formatTime(conversation.lastMessage.timestamp)}
+                      </span>
+                    </div>
+                    {conversation.campaignTitle && (
+                      <Badge variant="secondary" className="text-xs mb-1">
+                        {conversation.campaignTitle}
+                      </Badge>
+                    )}
+                    <p className="text-sm text-muted-foreground truncate">
+                      {conversation.lastMessage?.content}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </ScrollArea>
+        </div>
+
+        {/* Chat Area */}
+        {selectedConversation ? (
+          <div className="flex-1 flex flex-col">
+            {/* Chat Header */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="md:hidden"
+                  onClick={() => setSelectedConversation(null)}
+                >
+                  ←
+                </Button>
+                <Avatar>
+                  <AvatarImage
+                    src={getOtherParticipant(selectedConversation)?.avatar}
+                    alt={getOtherParticipant(selectedConversation)?.name}
+                  />
+                  <AvatarFallback>
+                    {getOtherParticipant(selectedConversation)?.name?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="font-semibold">
+                    {getOtherParticipant(selectedConversation)?.name}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">Online</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon-sm" aria-label="Voice call">
+                  <Phone className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Video call">
+                  <Video className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Info">
+                  <Info className="w-4 h-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" aria-label="More options">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-popover">
+                    <DropdownMenuItem>View Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Mute Notifications</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Block User</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {messages.map((message, index) => {
+                  const isOwn = message.senderId === currentUserId;
+                  const showDate = index === 0 || 
+                    formatDate(messages[index - 1].timestamp) !== formatDate(message.timestamp);
+
+                  return (
+                    <div key={message.id}>
+                      {showDate && (
+                        <div className="flex justify-center my-4">
+                          <span className="text-xs text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                            {formatDate(message.timestamp)}
+                          </span>
+                        </div>
+                      )}
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={cn("flex", isOwn ? "justify-end" : "justify-start")}
+                      >
+                        <div className={cn(
+                          "max-w-[70%] rounded-2xl px-4 py-2",
+                          isOwn
+                            ? "bg-primary text-primary-foreground rounded-br-sm"
+                            : "bg-muted rounded-bl-sm"
+                        )}>
+                          <p className="text-sm">{message.content}</p>
+                          <div className={cn(
+                            "flex items-center gap-1 mt-1",
+                            isOwn ? "justify-end" : "justify-start"
+                          )}>
+                            <span className={cn(
+                              "text-xs",
+                              isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
+                            )}>
+                              {formatTime(message.timestamp)}
+                            </span>
+                            {isOwn && (
+                              message.read
+                                ? <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
+                                : <Check className="w-3 h-3 text-primary-foreground/70" />
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="p-4 border-t">
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon-sm" aria-label="Attach file">
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon-sm" aria-label="Add image">
+                  <Image className="w-4 h-4" />
+                </Button>
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1"
+                />
+                <Button variant="ghost" size="icon-sm" aria-label="Add emoji">
+                  <Smile className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="hero"
+                  size="icon"
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim()}
+                  aria-label="Send message"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="hidden md:flex flex-1 items-center justify-center text-muted-foreground">
+            Select a conversation to start messaging
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
