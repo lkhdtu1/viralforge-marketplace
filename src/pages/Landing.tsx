@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -14,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { DemoModal } from '@/components/DemoModal';
 import heroBg from '@/assets/hero-bg.jpg';
 
 const fadeInUp = {
@@ -134,8 +136,11 @@ const pricingPlans = [
 ];
 
 export default function Landing() {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
   return (
     <div className="overflow-hidden">
+      <DemoModal open={isDemoOpen} onOpenChange={setIsDemoOpen} />
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center pt-16">
         {/* Background */}
@@ -191,7 +196,12 @@ export default function Landing() {
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
-              <Button variant="hero-outline" size="xl" className="w-full sm:w-auto">
+              <Button 
+                variant="hero-outline" 
+                size="xl" 
+                className="w-full sm:w-auto"
+                onClick={() => setIsDemoOpen(true)}
+              >
                 <Play className="w-5 h-5" />
                 Watch Demo
               </Button>
@@ -374,12 +384,14 @@ export default function Landing() {
                         </li>
                       ))}
                     </ul>
-                    <Button 
-                      variant={plan.popular ? 'hero' : 'outline'} 
-                      className="w-full"
-                    >
-                      {plan.cta}
-                    </Button>
+                    <Link to={plan.name === 'Enterprise' ? '/pricing/enterprise' : '/auth?mode=signup'}>
+                      <Button 
+                        variant={plan.popular ? 'hero' : 'outline'} 
+                        className="w-full"
+                      >
+                        {plan.cta}
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </motion.div>
