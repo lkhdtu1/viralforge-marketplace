@@ -1,0 +1,335 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import passport from '../config/passport';
+import env from '../config/env';
+import {
+  registerUser,
+  loginUser,
+  verifyEmail,
+  resetPassword,
+  generateEmailVerificationToken,
+  generatePasswordResetToken,
+  revokeRefreshToken,
+  verifyRefreshToken,
+  generateTokens,
+  storeRefreshToken,
+} from '../services/auth.service';
+import { handleOAuthLogin } from '../services/oauth.service';
+import { authenticate, authRateLimiter } from '../middleware/auth';
+import { validate, sanitizeInput } from '../middleware/validation';
+import { rateLimiter } from '../middleware/security';
+import prisma from '../config/database';
+import logger from '../utils/logger';
+import { AuthenticationError, NotFoundError } from '../utils/errors';
+
+const router = Router();
+
+// Validation schemas
+const registerSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    password: z.string().min(8).max(100),
+    role: z.enum(['BRAND', 'CREATOR']).optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    displayName: z.string().optional(),
+  }),
+});
+
+const loginSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+    password: z.string(),
+  }),
+});
+
+const refreshTokenSchema = z.object({
+  body: z.object({
+    refreshToken: z.string(),
+  }),
+});
+
+const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email(),
+  }),
+});
+
+const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string(),
+    newPassword: z.string().min(8).max(100),
+  }),
+});
+
+// Register new user
+router.post(
+  '/register',
+  rateLimiter,
+  sanitizeInput,
+  validate(registerSchema),
+  async (req, res, next) => {
+    try {
+      const { email, password, role, firstName, lastName, displayName } = req.body;
+      
+      const user = await registerUser(email, password, role, {
+        firstName,
+        lastName,
+        displayName,
+      });
+      
+      // Generate verification token
+      const verificationToken = generateEmailVerificationToken(user.id);
+      
+      // TODO: Send verification email
+      logger.info(`User registered: ${user.email}, verification token: ${verificationToken}`);
+      
+      res.status(201).json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            emailVerified: user.emailVerified,
+          },
+          message: 'Registration successful. Please check your email for verification.',
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Login user
+router.post(
+  '/login',
+  authRateLimiter,
+  sanitizeInput,
+  validate(loginSchema),
+  async (req, res, next) => {
+    try {
+      const { email, password } = req.body;
+      
+      const { user, accessToken, refreshToken } = await loginUser(email, password);
+      
+      res.json({
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            displayName: user.displayName,
+            avatar: user.avatar,
+          },
+          accessToken,
+          refreshToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Refresh access token
+router.post(
+  '/refresh',
+  sanitizeInput,
+  validate(refreshTokenSchema),
+  async (req, res, next) => {
+    try {
+      const { refreshToken } = req.body;
+      
+      const userData = await verifyRefreshToken(refreshToken);
+      
+      const { accessToken, refreshToken: newRefreshToken } = generateTokens(userData);
+      
+      // Store new refresh token
+      await storeRefreshToken(userData.userId, newRefreshToken);
+      
+      // Revoke old refresh token
+      await revokeRefreshToken(refreshToken);
+      
+      res.json({
+        success: true,
+        data: {
+          accessToken,
+          refreshToken: newRefreshToken,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Logout (revoke refresh token)
+router.post('/logout', authenticate, async (req, res, next) => {
+  try {
+    const refreshToken = req.body.refreshToken;
+    
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Verify email
+router.get('/verify-email/:token', async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    
+    await verifyEmail(token);
+    
+    const redirectUrl = env.VERIFICATION_REDIRECT_URL || env.FRONTEND_URL;
+    res.redirect(`${redirectUrl}?verified=true`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Forgot password
+router.post(
+  '/forgot-password',
+  authRateLimiter,
+  sanitizeInput,
+  validate(forgotPasswordSchema),
+  async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      
+      // Don't reveal if user exists (security best practice)
+      if (user) {
+        const resetToken = generatePasswordResetToken(user.id);
+        
+        // TODO: Send password reset email
+        logger.info(`Password reset requested for: ${email}, token: ${resetToken}`);
+      }
+      
+      res.json({
+        success: true,
+        message: 'If an account exists, a password reset link has been sent.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Reset password
+router.post(
+  '/reset-password',
+  authRateLimiter,
+  sanitizeInput,
+  validate(resetPasswordSchema),
+  async (req, res, next) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      await resetPassword(token, newPassword);
+      
+      res.json({
+        success: true,
+        message: 'Password reset successful',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Google OAuth routes
+router.get(
+  '/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { session: false }),
+  async (req, res, next) => {
+    try {
+      const user = req.user as any;
+      const { accessToken, refreshToken } = await handleOAuthLogin(user);
+      
+      const redirectUrl = `${env.FRONTEND_URL}/auth/callback?token=${accessToken}&refresh=${refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Twitter OAuth routes
+router.get(
+  '/twitter',
+  passport.authenticate('twitter')
+);
+
+router.get(
+  '/twitter/callback',
+  passport.authenticate('twitter', { session: false }),
+  async (req, res, next) => {
+    try {
+      const user = req.user as any;
+      const { accessToken, refreshToken } = await handleOAuthLogin(user);
+      
+      const redirectUrl = `${env.FRONTEND_URL}/auth/callback?token=${accessToken}&refresh=${refreshToken}`;
+      res.redirect(redirectUrl);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Get current user
+router.get('/me', authenticate, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: {
+        id: true,
+        email: true,
+        emailVerified: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        avatar: true,
+        role: true,
+        bio: true,
+        website: true,
+        socialLinks: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
+    
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+    
+    res.json({
+      success: true,
+      data: { user },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+export default router;
+

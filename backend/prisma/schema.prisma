@@ -1,0 +1,346 @@
+// Prisma Schema for ViralForge Marketplace
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access control
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  passwordHash  String?   // Nullable for OAuth users
+  firstName     String?
+  lastName      String?
+  displayName   String?
+  avatar        String?
+  role          UserRole  @default(CREATOR)
+  bio           String?   @db.Text
+  website       String?
+  socialLinks   Json?     // { twitter, instagram, tiktok, youtube }
+  
+  // OAuth providers
+  googleId      String?   @unique
+  twitterId     String?   @unique
+  appleId       String?   @unique
+  
+  // Stripe integration
+  stripeCustomerId String? @unique
+  stripeAccountId  String? // For creators to receive payments
+  
+  // Profile metadata
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false) // Platform verification badge
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  
+  // Relations
+  campaigns     Campaign[]
+  listings      Listing[]
+  contracts     Contract[] @relation("BrandContracts")
+  creatorContracts Contract[] @relation("CreatorContracts")
+  sentMessages  Message[]  @relation("SenderMessages")
+  receivedMessages Message[] @relation("ReceiverMessages")
+  transactions  Transaction[]
+  analyticsEvents AnalyticsEvent[]
+  viralityScores ViralityScoreHistory[]
+  cookieConsents CookieConsent[]
+  
+  // Refresh tokens
+  refreshTokens RefreshToken[]
+  
+  @@index([email])
+  @@index([role])
+  @@index([stripeCustomerId])
+  @@map("users")
+}
+
+enum UserRole {
+  BRAND
+  CREATOR
+  ADMIN
+}
+
+// Refresh token for JWT rotation
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// Campaign model for brand campaigns
+model Campaign {
+  id          String      @id @default(uuid())
+  brandId     String
+  title       String
+  description String      @db.Text
+  budget      Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  status      CampaignStatus @default(DRAFT)
+  requirements String?    @db.Text
+  targetAudience Json?    // { ageRange, interests, demographics }
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  brand       User       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  listings    Listing[]
+  contracts   Contract[]
+  
+  @@index([brandId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+// Listing model for influencer offers
+model Listing {
+  id          String      @id @default(uuid())
+  creatorId   String
+  campaignId  String?
+  title       String
+  description String      @db.Text
+  price       Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  deliverables String?   @db.Text
+  platform    String[]   // ["instagram", "tiktok", "youtube"]
+  reach       Int?        // Estimated reach
+  engagement  Decimal?    @db.Decimal(5, 2) // Engagement rate percentage
+  status      ListingStatus @default(ACTIVE)
+  featured    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  creator     User        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  contracts   Contract[]
+  
+  @@index([creatorId])
+  @@index([status])
+  @@index([featured])
+  // Fulltext search handled via PostgreSQL native search (see search.service.ts)
+  @@map("listings")
+}
+
+enum ListingStatus {
+  ACTIVE
+  INACTIVE
+  SOLD_OUT
+  ARCHIVED
+}
+
+// Contract model linking brands and creators
+model Contract {
+  id          String      @id @default(uuid())
+  brandId     String
+  creatorId   String
+  campaignId  String?
+  listingId   String?
+  title       String
+  terms       String      @db.Text
+  amount      Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  status      ContractStatus @default(PENDING)
+  signedAt    DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  brand       User        @relation("BrandContracts", fields: [brandId], references: [id], onDelete: Cascade)
+  creator     User        @relation("CreatorContracts", fields: [creatorId], references: [id], onDelete: Cascade)
+  campaign    Campaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  listing     Listing?    @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  escrow      Escrow?
+  transactions Transaction[]
+  
+  @@index([brandId])
+  @@index([creatorId])
+  @@index([status])
+  @@map("contracts")
+}
+
+enum ContractStatus {
+  PENDING
+  SIGNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+// Escrow model for secure payment handling
+model Escrow {
+  id            String        @id @default(uuid())
+  contractId    String        @unique
+  stripePaymentIntentId String? @unique
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+  status        EscrowStatus  @default(CREATED)
+  fundedAt      DateTime?
+  releasedAt    DateTime?
+  refundedAt    DateTime?
+  disputeReason String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  contract      Contract      @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@map("escrows")
+}
+
+enum EscrowStatus {
+  CREATED      // Escrow created, awaiting funding
+  FUNDED       // Payment received, awaiting work completion
+  IN_PROGRESS  // Work in progress
+  COMPLETED    // Work completed, awaiting release
+  RELEASED     // Funds released to creator
+  REFUNDED     // Funds refunded to brand
+}
+
+// Transaction model for payment history
+model Transaction {
+  id            String      @id @default(uuid())
+  userId        String
+  contractId    String?
+  escrowId      String?
+  type          TransactionType
+  amount        Decimal     @db.Decimal(10, 2)
+  currency      String      @default("USD")
+  status        TransactionStatus @default(PENDING)
+  stripeChargeId String?   @unique
+  description   String?
+  metadata      Json?
+  createdAt     DateTime   @default(now())
+  
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contract      Contract?   @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  escrow        Escrow?     @relation(fields: [escrowId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([contractId])
+  @@index([escrowId])
+  @@index([status])
+  @@index([type])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  PAYMENT      // Payment to creator
+  REFUND       // Refund to brand
+  FEE          // Platform fee
+  WITHDRAWAL   // Creator withdrawal
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// Message model for brand-creator communication
+model Message {
+  id          String      @id @default(uuid())
+  senderId    String
+  receiverId  String
+  contractId  String?
+  subject     String?
+  content     String      @db.Text
+  isRead      Boolean     @default(false)
+  readAt      DateTime?
+  createdAt   DateTime    @default(now())
+  
+  sender      User        @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User        @relation("ReceiverMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([contractId])
+  @@index([isRead])
+  @@map("messages")
+}
+
+// Analytics event model for tracking user actions
+model AnalyticsEvent {
+  id          String      @id @default(uuid())
+  userId      String?
+  eventType   String      // "page_view", "campaign_view", "listing_click", "share", "engagement"
+  eventData   Json?       // Flexible event payload
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  createdAt   DateTime    @default(now())
+  
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("analytics_events")
+}
+
+// Virality score history for tracking creator performance
+model ViralityScoreHistory {
+  id          String      @id @default(uuid())
+  userId      String
+  score       Decimal     @db.Decimal(10, 4) // 0-100 scale
+  metrics     Json        // { shareRate, engagementPerUser, velocity, breakdown }
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime    @default(now())
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([periodStart, periodEnd])
+  @@map("virality_score_history")
+}
+
+// Cookie consent tracking for GDPR compliance
+model CookieConsent {
+  id          String      @id @default(uuid())
+  userId      String?
+  sessionId   String?
+  consentType String      // "necessary", "analytics", "marketing"
+  consented   Boolean
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+  
+  user        User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([sessionId])
+  @@map("cookie_consents")
+}
+

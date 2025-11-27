@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: viralforge-postgres
+    environment:
+      POSTGRES_USER: viralforge
+      POSTGRES_PASSWORD: viralforge_dev_password
+      POSTGRES_DB: viralforge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viralforge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - viralforge-network
+
+  # Redis for rate limiting and queues
+  redis:
+    image: redis:7-alpine
+    container_name: viralforge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - viralforge-network
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: viralforge-api
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://viralforge:viralforge_dev_password@postgres:5432/viralforge?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev_jwt_secret_change_in_production_min_32_characters_long
+      JWT_REFRESH_SECRET: dev_refresh_secret_change_in_production_min_32_characters_long
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+      CORS_ORIGIN: http://localhost:5173,http://localhost:3000
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src
+    command: npm run dev
+    networks:
+      - viralforge-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  viralforge-network:
+    driver: bridge
+
