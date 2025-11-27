@@ -8,6 +8,9 @@ import { Layout } from "@/components/layout/Layout";
 
 // Pages
 import Landing from "./pages/Landing";
+import About from "./pages/About";
+import Products from "./pages/Products";
+import PricingPlans from "./pages/PricingPlans";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Marketplace from "./pages/Marketplace";
@@ -31,9 +34,12 @@ const App = () => (
             {/* Public routes */}
             <Route element={<Layout />}>
               <Route path="/" element={<Landing />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/pricing" element={<PricingPlans />} />
+              <Route path="/pricing/:planType" element={<PricingPlans />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/creators/:id" element={<CreatorProfile />} />
-              <Route path="/pricing" element={<Landing />} />
               <Route path="/terms" element={<Legal />} />
               <Route path="/privacy" element={<Legal />} />
               <Route path="/cookies" element={<Legal />} />
