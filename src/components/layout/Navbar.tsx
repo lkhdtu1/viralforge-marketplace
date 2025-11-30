@@ -11,8 +11,13 @@ import {
   User,
   LogOut,
   Settings,
-  LayoutDashboard
+  LayoutDashboard,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
@@ -24,15 +29,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
   user?: {
-    displayName?: string;
+    name: string;
     email: string;
     avatar?: string;
-    role?: string;
   };
 }
 
@@ -60,6 +63,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { itemCount } = useCart();
   const { logout } = useAuth();
 
   const handleLogout = () => {
@@ -121,6 +125,18 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
+          {/* Cart Icon */}
+          <Link to="/cart">
+            <Button variant="ghost" size="icon-sm" className="relative" aria-label="Shopping cart">
+              <ShoppingCart className="h-4 w-4" />
+              {itemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center">
+                  {itemCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          
           {isAuthenticated ? (
             <>
               {/* Notifications */}
@@ -136,16 +152,16 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="User menu">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.displayName} />
+                      <AvatarImage src={user?.avatar} alt={user?.name} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {user?.displayName?.charAt(0) || 'U'}
+                        {user?.name?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.displayName}</p>
+                    <p className="text-sm font-medium">{user?.name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
@@ -153,6 +169,12 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                     <Link to="/dashboard" className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      My Orders
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
