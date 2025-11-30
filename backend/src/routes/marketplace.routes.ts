@@ -10,6 +10,29 @@ import { rateLimiter } from '../middleware/security';
 
 const router = Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Marketplace
+ *   description: Creator marketplace endpoints
+ */
+
+/**
+ * @swagger
+ * /api/v1/marketplace:
+ *   get:
+ *     summary: Browse creator listings
+ *     tags: [Marketplace]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of listings
+ */
+
 // Validation schemas
 const createListingSchema = z.object({
   body: z.object({

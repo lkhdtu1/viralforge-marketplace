@@ -143,12 +143,15 @@ export const registerUser = async (
   // Hash password
   const passwordHash = await hashPassword(password);
   
+  // Normalize role to uppercase
+  const normalizedRole = typeof role === 'string' ? (role.toUpperCase() as UserRole) : role;
+  
   // Create user
   return prisma.user.create({
     data: {
       email,
       passwordHash,
-      role,
+      role: normalizedRole,
       ...additionalData,
     },
   });

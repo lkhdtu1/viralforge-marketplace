@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { 
@@ -24,13 +24,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
   user?: {
-    name: string;
+    displayName?: string;
     email: string;
     avatar?: string;
+    role?: string;
   };
 }
 
@@ -57,6 +59,13 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -127,16 +136,16 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="User menu">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarImage src={user?.avatar} alt={user?.displayName} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {user?.name?.charAt(0) || 'U'}
+                        {user?.displayName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-sm font-medium">{user?.displayName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
@@ -153,7 +162,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive cursor-pointer">
+                  <DropdownMenuItem className="text-destructive cursor-pointer" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
                   </DropdownMenuItem>

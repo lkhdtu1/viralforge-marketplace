@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { campaignsApi, analyticsApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Campaign, OverviewMetrics } from '@/types';
 import {
   LineChart,
@@ -59,18 +60,28 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user) return;
+      
       try {
         const [campaignsData, metricsData] = await Promise.all([
-          campaignsApi.getAll(),
+          campaignsApi.getAll({ limit: 5 }),
           analyticsApi.getOverview()
         ]);
-        setCampaigns(campaignsData);
+        
+        // Filter campaigns by current user if they're a brand
+        const userCampaigns = user.role === 'BRAND' 
+          ? campaignsData.filter(c => c.brandId === user.id)
+          : campaignsData;
+        
+        setCampaigns(userCampaigns);
         setMetrics(metricsData);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -79,7 +90,7 @@ export default function Dashboard() {
       }
     };
     loadData();
-  }, []);
+  }, [user]);
 
   const statCards = [
     {
@@ -293,7 +304,7 @@ export default function Dashboard() {
                         <h3 className="font-medium truncate">{campaign.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="w-3 h-3" />
-                          <span>{new Date(campaign.deadline).toLocaleDateString()}</span>
+                          <span>{campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'No deadline'}</span>
                         </div>
                       </div>
                     </div>
@@ -321,11 +332,11 @@ export default function Dashboard() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/campaigns/${campaign.id}`)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/campaigns/${campaign.id}/analytics`)}>
                             <BarChart3 className="w-4 h-4 mr-2" />
                             View Analytics
                           </DropdownMenuItem>

@@ -37,15 +37,42 @@ const swaggerOptions = {
     info: {
       title: 'ViralForge API',
       version: '1.0.0',
-      description: 'Secure backend API for ViralForge marketplace',
+      description: 'Secure backend API for ViralForge marketplace - connecting brands with content creators',
       contact: {
         name: 'API Support',
+        email: 'support@viralforge.com',
       },
     },
     servers: [
       {
         url: `http://localhost:${env.PORT}`,
         description: 'Development server',
+      },
+      {
+        url: 'https://api.viralforge.com',
+        description: 'Production server',
+      },
+    ],
+    tags: [
+      {
+        name: 'Authentication',
+        description: 'User authentication and authorization',
+      },
+      {
+        name: 'Campaigns',
+        description: 'Brand campaign management',
+      },
+      {
+        name: 'Marketplace',
+        description: 'Creator marketplace and listings',
+      },
+      {
+        name: 'Analytics',
+        description: 'Campaign analytics and metrics',
+      },
+      {
+        name: 'Messages',
+        description: 'Direct messaging between brands and creators',
       },
     ],
     components: {
@@ -54,6 +81,40 @@ const swaggerOptions = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
+          description: 'Enter your JWT token',
+        },
+      },
+      schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            email: { type: 'string', format: 'email' },
+            role: { type: 'string', enum: ['CREATOR', 'BRAND', 'ADMIN'] },
+            displayName: { type: 'string' },
+          },
+        },
+        Campaign: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            budget: { type: 'number' },
+            status: { type: 'string', enum: ['DRAFT', 'ACTIVE', 'PAUSED', 'COMPLETED', 'CANCELLED'] },
+          },
+        },
+        Error: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: false },
+            error: {
+              type: 'object',
+              properties: {
+                message: { type: 'string' },
+              },
+            },
+          },
         },
       },
     },
@@ -63,7 +124,7 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ['./src/routes/*.ts'], // Path to API files
+  apis: ['./src/routes/*.ts'],
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);

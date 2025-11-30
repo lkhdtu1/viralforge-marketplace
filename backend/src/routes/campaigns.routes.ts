@@ -10,6 +10,120 @@ import { rateLimiter } from '../middleware/security';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/v1/campaigns:
+ *   post:
+ *     summary: Create a new campaign (Brand only)
+ *     tags: [Campaigns]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - budget
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               budget:
+ *                 type: number
+ *               requirements:
+ *                 type: string
+ *               endDate:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: Campaign created
+ *       401:
+ *         description: Unauthorized
+ *   get:
+ *     summary: Get all campaigns
+ *     tags: [Campaigns]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [DRAFT, ACTIVE, PAUSED, COMPLETED, CANCELLED]
+ *       - in: query
+ *         name: brandId
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of campaigns
+ */
+
+/**
+ * @swagger
+ * /api/v1/campaigns/{id}:
+ *   get:
+ *     summary: Get campaign by ID
+ *     tags: [Campaigns]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Campaign details
+ *       404:
+ *         description: Campaign not found
+ *   put:
+ *     summary: Update campaign
+ *     tags: [Campaigns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [DRAFT, ACTIVE, PAUSED, COMPLETED, CANCELLED]
+ *     responses:
+ *       200:
+ *         description: Campaign updated
+ *   delete:
+ *     summary: Delete campaign
+ *     tags: [Campaigns]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Campaign deleted
+ */
+
 // Validation schemas
 const createCampaignSchema = z.object({
   body: z.object({
@@ -63,6 +177,7 @@ router.post(
         data: {
           ...campaignData,
           brandId,
+          status: CampaignStatus.ACTIVE,
           startDate: campaignData.startDate ? new Date(campaignData.startDate) : undefined,
           endDate: campaignData.endDate ? new Date(campaignData.endDate) : undefined,
         },
@@ -84,9 +199,11 @@ router.get('/', pagination, async (req, res, next) => {
     const paginationParams = req.pagination!;
     const { status, brandId, search } = req.query;
     
-    const where: any = {
-      status: status ? (status as CampaignStatus) : CampaignStatus.ACTIVE,
-    };
+    const where: any = {};
+    
+    if (status) {
+      where.status = status as CampaignStatus;
+    }
     
     if (brandId) {
       where.brandId = brandId as string;

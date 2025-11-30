@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const benefits = [
   'Access to 50,000+ verified creators',
@@ -30,6 +31,7 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, signup } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
@@ -46,32 +48,44 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: 'Welcome back!',
-      description: 'You have been logged in successfully.',
-    });
-    
-    setIsLoading(false);
-    navigate('/dashboard');
+    try {
+      await login(loginForm.email, loginForm.password);
+      toast({
+        title: 'Welcome back!',
+        description: 'You have been logged in successfully.',
+      });
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: 'Login failed',
+        description: error.response?.data?.error?.message || 'Invalid email or password',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: 'Account created!',
-      description: 'Welcome to ViralForge. Let\'s set up your profile.',
-    });
-    
-    setIsLoading(false);
-    navigate('/dashboard');
+    try {
+      await signup(signupForm.email, signupForm.password, signupForm.role, signupForm.name);
+      toast({
+        title: 'Account created!',
+        description: 'Welcome to ViralForge. Let\'s set up your profile.',
+      });
+      navigate('/dashboard');
+    } catch (error: any) {
+      toast({
+        title: 'Signup failed',
+        description: error.response?.data?.error?.message || 'Could not create account',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOAuth = async (provider: 'google' | 'apple' | 'twitter') => {

@@ -1,20 +1,12 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Mock auth state - in real app would come from auth context
-const mockUser = {
-  name: 'John Doe',
-  email: 'john@example.com',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-};
-
-interface LayoutProps {
-  isAuthenticated?: boolean;
-}
-
-export function Layout({ isAuthenticated = false }: LayoutProps) {
+export function Layout() {
   const location = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
+  
   const isAuthPage = location.pathname.startsWith('/auth');
   const isDashboardPage = location.pathname.startsWith('/dashboard') || 
                           location.pathname.startsWith('/messages') ||
@@ -26,9 +18,22 @@ export function Layout({ isAuthenticated = false }: LayoutProps) {
     return <Outlet />;
   }
 
+  // Protect dashboard routes
+  if (isDashboardPage && !isLoading && !isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar isAuthenticated={isAuthenticated} user={isAuthenticated ? mockUser : undefined} />
+      <Navbar isAuthenticated={isAuthenticated} user={user || undefined} />
       <main className={isDashboardPage ? 'flex-1 pt-16' : 'flex-1'}>
         <Outlet />
       </main>

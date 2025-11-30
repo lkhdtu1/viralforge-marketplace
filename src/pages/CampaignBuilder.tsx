@@ -34,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import type { CampaignDraft } from '@/types';
+import { campaignsApi } from '@/lib/api';
 
 const steps = [
   { id: 'brief', label: 'Brief', icon: FileText },
@@ -95,6 +96,7 @@ export default function CampaignBuilder() {
   const [newDeliverable, setNewDeliverable] = useState('');
   const [newDo, setNewDo] = useState('');
   const [newDont, setNewDont] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
@@ -110,12 +112,59 @@ export default function CampaignBuilder() {
     }
   };
 
-  const handleSubmit = () => {
-    toast({
-      title: 'Campaign Created!',
-      description: 'Your campaign has been submitted for review.',
-    });
-    navigate('/dashboard');
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!draft.brief.title || !draft.brief.description) {
+      toast({
+        title: 'Missing Information',
+        description: 'Please fill in title and description',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (draft.budget.total <= 0) {
+      toast({
+        title: 'Invalid Budget',
+        description: 'Budget must be greater than 0',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const campaignData = {
+        title: draft.brief.title,
+        description: draft.brief.description,
+        budget: draft.budget.total,
+        requirements: draft.brief.requirements.length > 0 ? draft.brief.requirements.join(', ') : undefined,
+        endDate: draft.distribution.timeline.end ? new Date(draft.distribution.timeline.end).toISOString() : undefined,
+      };
+
+      console.log('Creating campaign with data:', campaignData);
+      
+      const result = await campaignsApi.create(campaignData);
+      
+      console.log('Campaign created:', result);
+      
+      toast({
+        title: 'Campaign Created!',
+        description: 'Your campaign has been created successfully.',
+      });
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Campaign creation error:', error);
+      console.error('Error response:', error.response?.data);
+      toast({
+        title: 'Failed to create campaign',
+        description: error.response?.data?.error?.message || error.message || 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addItem = (
@@ -372,14 +421,14 @@ export default function CampaignBuilder() {
 
                   <div className="space-y-2">
                     <Label>Reference Examples</Label>
-                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center">
+                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center bg-muted/30">
                       <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
                       <p className="text-sm text-muted-foreground mb-2">
-                        Drag & drop files or click to upload
+                        File upload coming soon
                       </p>
-                      <Button variant="outline" size="sm">
-                        Browse Files
-                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        For now, you can share reference links in the guidelines above
+                      </p>
                     </div>
                   </div>
 
