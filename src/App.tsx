@@ -14,6 +14,7 @@ import Products from "./pages/Products";
 import PricingPlans from "./pages/PricingPlans";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import RoleBasedRoute from "./components/RoleBasedRoute";
 import Marketplace from "./pages/Marketplace";
 import CreatorProfile from "./pages/CreatorProfile";
 import CampaignBuilder from "./pages/CampaignBuilder";
@@ -55,7 +56,7 @@ const App = () => (
 
               {/* Protected routes (with auth simulation) */}
               <Route element={<Layout isAuthenticated />}>
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard" element={<RoleBasedRoute />} />
                 <Route path="/campaigns/new" element={<CampaignBuilder />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/orders" element={<Orders />} />
