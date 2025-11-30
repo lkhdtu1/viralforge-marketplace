@@ -49,6 +49,10 @@ export default function Auth() {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
+    // Store user role (in real app, this would come from API)
+    const userRole = 'brand'; // Default for demo
+    localStorage.setItem('userRole', userRole);
+    
     toast({
       title: 'Welcome back!',
       description: 'You have been logged in successfully.',
@@ -64,6 +68,9 @@ export default function Auth() {
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Store user role
+    localStorage.setItem('userRole', signupForm.role);
     
     toast({
       title: 'Account created!',
