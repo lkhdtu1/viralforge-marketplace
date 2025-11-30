@@ -1,73 +1,208 @@
-# Welcome to your Lovable project
+# ViralForge Marketplace
 
-## Project info
+A marketplace platform connecting brands with content creators for influencer marketing campaigns.
 
-**URL**: https://lovable.dev/projects/07974f0a-399d-41df-8fb0-fd0bd131ee32
+## What is ViralForge?
 
-## How can I edit this code?
+ViralForge is a full-stack marketplace where:
+- **Brands** create campaigns and hire content creators
+- **Creators** offer services and apply to campaigns
+- **Platform** handles contracts, payments, and messaging
 
-There are several ways of editing your application.
+Think Upwork/Fiverr but specifically for influencer marketing.
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/07974f0a-399d-41df-8fb0-fd0bd131ee32) and start prompting.
+- 🔐 Authentication with role-based access (Brand/Creator)
+- 🔍 Discovery system to browse creators and services
+- 🛒 Shopping cart and checkout
+- 📝 Campaign creation and applications
+- 💬 Real-time messaging
+- 📊 Contract and order management
+- 💰 Escrow payment system (ready for Stripe)
+- 🎨 Modern UI with shadcn/ui components
 
-Changes made via Lovable will be committed automatically to this repo.
+## Tech Stack
 
-**Use your preferred IDE**
+**Frontend:**
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS + shadcn/ui
+- React Query
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+**Backend:**
+- Node.js 20 + Express
+- Prisma ORM
+- PostgreSQL
+- JWT authentication
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Quick Start
 
-Follow these steps:
+### Prerequisites
+- Node.js 20+
+- Docker & Docker Compose
+- npm or bun
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **Clone the repository**
+```bash
+git clone <your-repo-url>
+cd viralforge-marketplace
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **Start databases**
+```bash
+sudo docker compose up -d
+```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. **Setup backend**
+```bash
+cd backend
+npm install
+npm run prisma:generate
+npm run prisma:migrate
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. **Setup frontend** (new terminal)
+```bash
+npm install
+npm run dev
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+5. **Access the app**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3001
+- API Docs: http://localhost:3001/api-docs
 
-**Use GitHub Codespaces**
+### Quick Start Script
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Or use the automated script:
+```bash
+./start-dev.sh
+```
 
-## What technologies are used for this project?
+## Environment Variables
 
-This project is built with:
+### Backend (`backend/.env`)
+```env
+DATABASE_URL="postgresql://viralforge:viralforge@localhost:5432/viralforge"
+JWT_SECRET="your-secret-key"
+JWT_REFRESH_SECRET="your-refresh-secret"
+PORT=3001
+NODE_ENV=development
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Frontend (`.env`)
+```env
+VITE_API_URL=http://localhost:3001
+```
 
-## How can I deploy this project?
+## Project Structure
 
-Simply open [Lovable](https://lovable.dev/projects/07974f0a-399d-41df-8fb0-fd0bd131ee32) and click on Share -> Publish.
+```
+viralforge-marketplace/
+├── backend/              # Express API
+│   ├── src/
+│   │   ├── routes/      # API endpoints
+│   │   ├── middleware/  # Auth, validation
+│   │   └── server.ts    # Main server
+│   └── prisma/          # Database schema
+├── src/                 # React frontend
+│   ├── components/      # UI components
+│   ├── pages/          # Page components
+│   └── lib/            # API client
+└── docker-compose.yml   # PostgreSQL + Redis
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Usage
 
-Yes, you can!
+### As a Creator
+1. Register with role "Creator"
+2. Go to Dashboard → "Manage Listings"
+3. Create service listings (e.g., "Instagram Post - $250")
+4. Browse campaigns and apply
+5. Manage contracts in Orders page
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### As a Brand
+1. Register with role "Brand"
+2. Browse `/discover` to find creators/services
+3. Add services to cart and checkout
+4. Or create campaigns and review applications
+5. Track contracts in Orders page
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## API Documentation
+
+Full API documentation available at http://localhost:3001/api-docs when running.
+
+Key endpoints:
+- `POST /api/v1/auth/register` - Create account
+- `POST /api/v1/auth/login` - Login
+- `GET /api/v1/marketplace` - Browse services
+- `POST /api/v1/contracts` - Create contract
+- `GET /api/v1/messages/conversations` - Get messages
+
+## Database
+
+PostgreSQL database with tables:
+- `users` - User accounts
+- `campaigns` - Brand campaigns
+- `listings` - Creator services
+- `contracts` - Orders/applications
+- `messages` - Direct messaging
+- `escrows` - Payment escrow
+
+View database:
+```bash
+cd backend
+npm run prisma:studio
+```
+
+## Development
+
+### Backend
+```bash
+cd backend
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run prisma:studio # Open database GUI
+```
+
+### Frontend
+```bash
+npm run dev          # Start dev server
+npm run build        # Build for production
+npm run preview      # Preview production build
+```
+
+## Testing
+
+1. Register two accounts (one Brand, one Creator)
+2. As Creator: Create a listing
+3. As Brand: Browse `/discover`, add to cart, checkout
+4. Test messaging between accounts
+5. Test campaign application flow
+
+## Deployment
+
+Ready for deployment to:
+- **Frontend:** Vercel, Netlify
+- **Backend:** Render, Fly.io, AWS
+- **Database:** Managed PostgreSQL (Supabase, Neon, etc.)
+
+See `backend/DEPLOYMENT.md` for detailed instructions.
+
+## Documentation
+
+- **Project Status:** `PROJECT_STATUS.md` - Complete feature overview
+- **Setup Guide:** `SETUP.md` - Detailed setup instructions
+- **Backend Docs:** `backend/README.md` - API documentation
+
+## License
+
+MIT
+
+## Support
+
+For issues or questions, check the documentation or open an issue on GitHub.
