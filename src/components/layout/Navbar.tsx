@@ -13,12 +13,14 @@ import {
   Settings,
   LayoutDashboard,
   ShoppingCart,
-  Package
+  Package,
+  Search
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
   DropdownMenu,
@@ -27,13 +29,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { usersApi } from '@/lib/api';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
   user?: {
-    name: string;
+    name?: string;
+    displayName?: string;
     email: string;
     avatar?: string;
   };
@@ -47,14 +64,14 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
   { href: '/products', label: 'Products' },
-  { href: '/marketplace', label: 'Marketplace' },
+  { href: '/discover', label: 'Discover' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
 ];
 
 const authNavLinks: NavLink[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/marketplace', label: 'Marketplace', icon: Zap },
+  { href: '/discover', label: 'Discover', icon: Zap },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
 ];
 
@@ -65,11 +82,38 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const navigate = useNavigate();
   const { itemCount } = useCart();
   const { logout } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  // Search users
+  useEffect(() => {
+    const searchUsers = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const results = await usersApi.search(searchQuery);
+        setSearchResults(results);
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    const debounce = setTimeout(searchUsers, 300);
+    return () => clearTimeout(debounce);
+  }, [searchQuery]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -125,6 +169,92 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
+          {/* User Search */}
+          {isAuthenticated && (
+            <Popover open={searchOpen} onOpenChange={setSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon-sm" aria-label="Search users">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search users..." 
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                  />
+                  <CommandList>
+                    {isSearching ? (
+                      <div className="py-6 text-center text-sm">Searching...</div>
+                    ) : searchResults.length === 0 && searchQuery.length >= 2 ? (
+                      <CommandEmpty>No users found.</CommandEmpty>
+                    ) : (
+                      <CommandGroup>
+                        {searchResults.map((result) => (
+                          <CommandItem
+                            key={result.id}
+                            className="flex items-center gap-3 p-2"
+                          >
+                            <Avatar className="w-8 h-8">
+                              <AvatarImage src={result.avatar} />
+                              <AvatarFallback>
+                                {result.displayName?.charAt(0) || 'U'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {result.displayName || 'User'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {result.role}
+                              </p>
+                            </div>
+                            {result.isVerified && (
+                              <Badge variant="secondary" className="text-xs">
+                                Verified
+                              </Badge>
+                            )}
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/messages?userId=${result.id}`);
+                                  setSearchOpen(false);
+                                  setSearchQuery('');
+                                }}
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                              </Button>
+                              {result.role === 'CREATOR' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/creators/${result.id}`);
+                                    setSearchOpen(false);
+                                    setSearchQuery('');
+                                  }}
+                                >
+                                  <User className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          )}
+          
           {/* Cart Icon */}
           <Link to="/cart">
             <Button variant="ghost" size="icon-sm" className="relative" aria-label="Shopping cart">
@@ -152,16 +282,16 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="User menu">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarImage src={user?.avatar} alt={user?.displayName || user?.name} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {user?.name?.charAt(0) || 'U'}
+                        {(user?.displayName || user?.name)?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.name}</p>
+                    <p className="text-sm font-medium">{user?.displayName || user?.name}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />

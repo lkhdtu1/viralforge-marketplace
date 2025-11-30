@@ -63,6 +63,18 @@ export const authApi = {
   },
 };
 
+export const usersApi = {
+  search: async (query: string, role?: string) => {
+    const { data } = await api.get('/users/search', { params: { q: query, role } });
+    return data.data;
+  },
+
+  getById: async (id: string) => {
+    const { data } = await api.get(`/users/${id}`);
+    return data.data.user;
+  },
+};
+
 export const campaignsApi = {
   getAll: async (params?: { status?: string; limit?: number; page?: number }): Promise<Campaign[]> => {
     const { data } = await api.get('/campaigns', { params });
@@ -118,19 +130,104 @@ export const analyticsApi = {
   },
 };
 
+export const contractsApi = {
+  getAll: async (params?: { status?: string; limit?: number; page?: number }) => {
+    const { data } = await api.get('/contracts', { params });
+    return data.data;
+  },
+
+  getById: async (id: string) => {
+    const { data } = await api.get(`/contracts/${id}`);
+    return data.data.contract;
+  },
+
+  create: async (contractData: {
+    creatorId: string;
+    listingId?: string;
+    campaignId?: string;
+    title: string;
+    terms: string;
+    amount: number;
+    currency?: string;
+  }) => {
+    const { data } = await api.post('/contracts', contractData);
+    return data.data.contract;
+  },
+
+  updateStatus: async (id: string, status: string) => {
+    const { data } = await api.patch(`/contracts/${id}`, { status });
+    return data.data.contract;
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/contracts/${id}`);
+  },
+};
+
+export const listingsApi = {
+  getAll: async (params?: {
+    status?: string;
+    creatorId?: string;
+    platform?: string;
+    featured?: boolean;
+    minPrice?: number;
+    maxPrice?: number;
+    search?: string;
+    limit?: number;
+    page?: number;
+  }) => {
+    const { data } = await api.get('/listings', { params });
+    return data.data;
+  },
+
+  getById: async (id: string) => {
+    const { data } = await api.get(`/listings/${id}`);
+    return data.data.listing;
+  },
+
+  create: async (listingData: {
+    title: string;
+    description: string;
+    price: number;
+    currency?: string;
+    deliverables?: string;
+    platform: string[];
+    reach?: number;
+    engagement?: number;
+    campaignId?: string;
+  }) => {
+    const { data } = await api.post('/listings', listingData);
+    return data.data.listing;
+  },
+
+  update: async (id: string, listingData: any) => {
+    const { data } = await api.put(`/listings/${id}`, listingData);
+    return data.data.listing;
+  },
+
+  delete: async (id: string) => {
+    await api.delete(`/listings/${id}`);
+  },
+};
+
 export const messagesApi = {
-  getConversations: async (): Promise<Conversation[]> => {
-    const { data } = await api.get('/messages');
+  getConversations: async () => {
+    const { data } = await api.get('/messages/conversations');
     return data.data;
   },
 
-  getMessages: async (conversationId: string): Promise<Message[]> => {
-    const { data } = await api.get(`/messages/${conversationId}`);
+  getMessages: async (userId: string) => {
+    const { data } = await api.get(`/messages/with/${userId}`);
     return data.data;
   },
 
-  sendMessage: async (conversationId: string, content: string): Promise<Message> => {
-    const { data } = await api.post('/messages', { conversationId, content });
+  send: async (messageData: { receiverId: string; content: string; contractId?: string }) => {
+    const { data } = await api.post('/messages', messageData);
+    return data.data.message;
+  },
+
+  markAsRead: async (messageIds: string[]) => {
+    const { data } = await api.patch('/messages/read', { messageIds });
     return data.data;
   },
 };

@@ -27,6 +27,52 @@ const updateProfileSchema = z.object({
   }),
 });
 
+// Search users (public)
+router.get('/search', async (req, res, next) => {
+  try {
+    const { q, role } = req.query;
+    
+    if (!q || (q as string).length < 2) {
+      return res.json({
+        success: true,
+        data: [],
+      });
+    }
+
+    const where: any = {
+      isActive: true,
+      OR: [
+        { displayName: { contains: q as string, mode: 'insensitive' } },
+        { email: { contains: q as string, mode: 'insensitive' } },
+      ],
+    };
+
+    if (role) {
+      where.role = role;
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      take: 10,
+      select: {
+        id: true,
+        displayName: true,
+        avatar: true,
+        role: true,
+        isVerified: true,
+        bio: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get user profile (public)
 router.get('/:id', optionalAuth, async (req, res, next) => {
   try {

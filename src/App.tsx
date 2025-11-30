@@ -14,13 +14,15 @@ import About from "./pages/About";
 import Products from "./pages/Products";
 import PricingPlans from "./pages/PricingPlans";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
 import Marketplace from "./pages/Marketplace";
+import Discover from "./pages/Discover";
 import CreatorProfile from "./pages/CreatorProfile";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import Campaigns from "./pages/Campaigns";
 import CampaignDetails from "./pages/CampaignDetails";
 import CampaignAnalytics from "./pages/CampaignAnalytics";
+import RoleBasedRoute from "./components/RoleBasedRoute";
+import CreatorListings from "./pages/CreatorListings";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import Legal from "./pages/Legal";
@@ -48,6 +50,7 @@ const App = () => (
                   <Route path="/pricing" element={<PricingPlans />} />
                   <Route path="/pricing/:planType" element={<PricingPlans />} />
                   <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/discover" element={<Discover />} />
                   <Route path="/creators/:id" element={<CreatorProfile />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route path="/terms" element={<Legal />} />
@@ -60,11 +63,12 @@ const App = () => (
 
                 {/* Protected routes */}
                 <Route element={<Layout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<RoleBasedRoute />} />
                   <Route path="/campaigns" element={<Campaigns />} />
                   <Route path="/campaigns/new" element={<CampaignBuilder />} />
                   <Route path="/campaigns/:id" element={<CampaignDetails />} />
                   <Route path="/campaigns/:id/analytics" element={<CampaignAnalytics />} />
+                  <Route path="/creator/listings" element={<CreatorListings />} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/settings" element={<Settings />} />

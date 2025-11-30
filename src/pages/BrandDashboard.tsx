@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
+  LayoutDashboard,
   Megaphone,
   TrendingUp,
   DollarSign,
@@ -14,9 +15,7 @@ import {
   MessageSquare,
   Calendar,
   BarChart3,
-  Zap,
-  Search,
-  Target
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,15 +28,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { campaignsApi, analyticsApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Campaign, OverviewMetrics } from '@/types';
 import {
-  AreaChart,
-  Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  AreaChart,
+  Area
 } from 'recharts';
 
 const chartData = [
@@ -57,19 +59,29 @@ const statusColors: Record<string, string> = {
   paused: 'bg-warning/10 text-warning border-warning/20',
 };
 
-export default function BrandDashboard() {
+export default function Dashboard() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user) return;
+      
       try {
         const [campaignsData, metricsData] = await Promise.all([
-          campaignsApi.getAll(),
+          campaignsApi.getAll({ limit: 5 }),
           analyticsApi.getOverview()
         ]);
-        setCampaigns(campaignsData);
+        
+        // Filter campaigns by current user if they're a brand
+        const userCampaigns = user.role === 'BRAND' 
+          ? campaignsData.filter(c => c.brandId === user.id)
+          : campaignsData;
+        
+        setCampaigns(userCampaigns);
         setMetrics(metricsData);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
@@ -78,15 +90,22 @@ export default function BrandDashboard() {
       }
     };
     loadData();
-  }, []);
+  }, [user]);
 
   const statCards = [
+    {
+      title: 'Total Campaigns',
+      value: metrics?.totalCampaigns || 0,
+      change: '+12%',
+      trend: 'up',
+      icon: Megaphone,
+    },
     {
       title: 'Active Campaigns',
       value: metrics?.activeCampaigns || 0,
       change: '+5%',
       trend: 'up',
-      icon: Megaphone,
+      icon: TrendingUp,
     },
     {
       title: 'Total Spent',
@@ -96,18 +115,11 @@ export default function BrandDashboard() {
       icon: DollarSign,
     },
     {
-      title: 'Creators Hired',
-      value: metrics?.totalCampaigns ? metrics.totalCampaigns * 3 : 0,
-      change: '+12%',
-      trend: 'up',
-      icon: Users,
-    },
-    {
-      title: 'Avg ROI',
-      value: '3.2x',
-      change: '+8%',
-      trend: 'up',
-      icon: TrendingUp,
+      title: 'Virality Score',
+      value: metrics?.viralityScore || 0,
+      change: '-2%',
+      trend: 'down',
+      icon: Zap,
     },
   ];
 
@@ -117,23 +129,15 @@ export default function BrandDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-1">Brand Dashboard</h1>
-            <p className="text-muted-foreground">Manage campaigns and discover top creators</p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-1">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
           </div>
-          <div className="flex gap-3">
-            <Link to="/marketplace">
-              <Button variant="outline">
-                <Search className="w-4 h-4" />
-                Find Creators
-              </Button>
-            </Link>
-            <Link to="/campaigns/new">
-              <Button variant="hero">
-                <Plus className="w-4 h-4" />
-                New Campaign
-              </Button>
-            </Link>
-          </div>
+          <Link to="/campaigns/new">
+            <Button variant="hero">
+              <Plus className="w-4 h-4" />
+              New Campaign
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Grid */}
@@ -175,8 +179,8 @@ export default function BrandDashboard() {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Campaign Performance</CardTitle>
-                <CardDescription>Weekly impressions and engagements across all campaigns</CardDescription>
+                <CardTitle className="text-lg">Performance Overview</CardTitle>
+                <CardDescription>Weekly impressions and engagements</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -244,20 +248,20 @@ export default function BrandDashboard() {
                 </Link>
                 <Link to="/marketplace" className="block">
                   <Button variant="outline" className="w-full justify-start">
-                    <Search className="w-4 h-4 mr-2" />
-                    Discover Creators
-                  </Button>
-                </Link>
-                <Link to="/orders" className="block">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Target className="w-4 h-4 mr-2" />
-                    View Orders
+                    <Users className="w-4 h-4 mr-2" />
+                    Find Creators
                   </Button>
                 </Link>
                 <Link to="/messages" className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <MessageSquare className="w-4 h-4 mr-2" />
                     View Messages
+                  </Button>
+                </Link>
+                <Link to="/analytics" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    View Analytics
                   </Button>
                 </Link>
               </CardContent>
@@ -275,8 +279,8 @@ export default function BrandDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Your Campaigns</CardTitle>
-                <CardDescription>Manage and track all your active campaigns</CardDescription>
+                <CardTitle className="text-lg">Recent Campaigns</CardTitle>
+                <CardDescription>Your latest campaign performance</CardDescription>
               </div>
               <Link to="/campaigns">
                 <Button variant="ghost" size="sm">
@@ -300,7 +304,7 @@ export default function BrandDashboard() {
                         <h3 className="font-medium truncate">{campaign.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="w-3 h-3" />
-                          <span>{new Date(campaign.deadline).toLocaleDateString()}</span>
+                          <span>{campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'No deadline'}</span>
                         </div>
                       </div>
                     </div>
@@ -328,11 +332,11 @@ export default function BrandDashboard() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="bg-popover">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/campaigns/${campaign.id}`)}>
                             <Eye className="w-4 h-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/campaigns/${campaign.id}/analytics`)}>
                             <BarChart3 className="w-4 h-4 mr-2" />
                             View Analytics
                           </DropdownMenuItem>

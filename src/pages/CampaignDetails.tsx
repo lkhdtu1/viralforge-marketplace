@@ -4,14 +4,26 @@ import { ArrowLeft, Calendar, DollarSign, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { campaignsApi } from '@/lib/api';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { campaignsApi, contractsApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import type { Campaign } from '@/types';
 
 export default function CampaignDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [proposal, setProposal] = useState('');
+  const [proposedAmount, setProposedAmount] = useState('');
 
   useEffect(() => {
     const loadCampaign = async () => {
@@ -27,6 +39,39 @@ export default function CampaignDetails() {
     };
     loadCampaign();
   }, [id]);
+
+  const handleApply = async () => {
+    if (!campaign || !user) return;
+    
+    setIsApplying(true);
+    try {
+      await contractsApi.create({
+        creatorId: user.id,
+        campaignId: campaign.id,
+        title: `Application for ${campaign.title}`,
+        terms: proposal || 'Application to work on this campaign',
+        amount: parseFloat(proposedAmount) || campaign.budget,
+        currency: 'USD',
+      });
+
+      toast({
+        title: 'Application submitted!',
+        description: 'The brand will review your application.',
+      });
+      
+      setIsDialogOpen(false);
+      setProposal('');
+      setProposedAmount('');
+    } catch (error: any) {
+      toast({
+        title: 'Application failed',
+        description: error.response?.data?.message || 'Failed to submit application',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -63,6 +108,53 @@ export default function CampaignDetails() {
                   <CardTitle className="text-3xl mb-2">{campaign.title}</CardTitle>
                   <Badge>{campaign.status}</Badge>
                 </div>
+                {user?.role === 'creator' || user?.role === 'CREATOR' ? (
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="lg">Apply to Campaign</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Apply to {campaign.title}</DialogTitle>
+                        <DialogDescription>
+                          Submit your proposal to work on this campaign
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="proposal">Your Proposal</Label>
+                          <Textarea
+                            id="proposal"
+                            value={proposal}
+                            onChange={(e) => setProposal(e.target.value)}
+                            placeholder="Explain why you're a good fit for this campaign..."
+                            rows={5}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="amount">Proposed Amount (USD)</Label>
+                          <Input
+                            id="amount"
+                            type="number"
+                            value={proposedAmount}
+                            onChange={(e) => setProposedAmount(e.target.value)}
+                            placeholder={campaign.budget.toString()}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Campaign budget: ${campaign.budget}
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={handleApply} 
+                          disabled={isApplying}
+                          className="w-full"
+                        >
+                          {isApplying ? 'Submitting...' : 'Submit Application'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="space-y-6">

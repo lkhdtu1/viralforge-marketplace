@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,9 +6,51 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useCart } from '@/contexts/CartContext';
 import { Badge } from '@/components/ui/badge';
+import { contractsApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 export default function Cart() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const { items, removeItem, updateQuantity, total, itemCount, clearCart } = useCart();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      // Create a contract for each cart item
+      const contractPromises = items.map(item =>
+        contractsApi.create({
+          creatorId: item.creatorId,
+          title: `${item.serviceType} Service`,
+          terms: `Deliver ${item.quantity} ${item.serviceType}(s) as agreed`,
+          amount: item.price * item.quantity,
+          currency: 'USD',
+        })
+      );
+
+      await Promise.all(contractPromises);
+      
+      toast({
+        title: 'Orders placed successfully!',
+        description: `${items.length} contract(s) created. Check your orders page.`,
+      });
+      
+      clearCart();
+      navigate('/orders');
+    } catch (error: any) {
+      toast({
+        title: 'Checkout failed',
+        description: error.response?.data?.message || 'Failed to create contracts',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -152,12 +194,16 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  <Link to="/checkout">
-                    <Button variant="hero" size="lg" className="w-full">
-                      Proceed to Checkout
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="w-full"
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut}
+                  >
+                    {isCheckingOut ? 'Processing...' : 'Proceed to Checkout'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
 
                   <p className="text-xs text-muted-foreground text-center mt-4">
                     Secure checkout • Money-back guarantee

@@ -47,15 +47,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signup = async (email: string, password: string, role: 'creator' | 'brand', displayName?: string) => {
-    const { user: userData, accessToken, refreshToken } = await authApi.signup({ 
+    await authApi.signup({ 
       email, 
       password, 
       role: role.toUpperCase() as 'CREATOR' | 'BRAND', 
       displayName 
     });
-    localStorage.setItem('auth_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
-    setUser(userData);
+    // Don't set user - they need to login after signup
   };
 
   const logout = () => {

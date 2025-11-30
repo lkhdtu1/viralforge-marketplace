@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Package,
@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   Eye,
-  Download,
   MessageSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,89 +13,84 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { contractsApi } from '@/lib/api';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface Order {
+interface Contract {
   id: string;
-  orderNumber: string;
-  creatorId: string;
-  creatorName: string;
-  creatorAvatar: string;
-  services: { type: string; quantity: number; price: number }[];
-  total: number;
-  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  title: string;
+  amount: number;
+  status: string;
   createdAt: string;
   completedAt?: string;
-  deliverables?: { name: string; url: string }[];
+  creator?: {
+    id: string;
+    displayName?: string;
+    avatar?: string;
+  };
+  brand?: {
+    id: string;
+    displayName?: string;
+    avatar?: string;
+  };
 }
 
-const mockOrders: Order[] = [
-  {
-    id: 'order_1',
-    orderNumber: 'ORD-2024-001',
-    creatorId: 'creator_1',
-    creatorName: 'Sarah Johnson',
-    creatorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-    services: [
-      { type: 'post', quantity: 3, price: 250 },
-      { type: 'story', quantity: 5, price: 100 },
-    ],
-    total: 1250,
-    status: 'completed',
-    createdAt: '2024-11-20T10:00:00Z',
-    completedAt: '2024-11-25T15:30:00Z',
-    deliverables: [
-      { name: 'Instagram Post 1', url: '#' },
-      { name: 'Instagram Post 2', url: '#' },
-      { name: 'Instagram Post 3', url: '#' },
-    ],
-  },
-  {
-    id: 'order_2',
-    orderNumber: 'ORD-2024-002',
-    creatorId: 'creator_2',
-    creatorName: 'Mike Chen',
-    creatorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
-    services: [{ type: 'video', quantity: 1, price: 1200 }],
-    total: 1200,
-    status: 'in-progress',
-    createdAt: '2024-11-22T14:00:00Z',
-  },
-  {
-    id: 'order_3',
-    orderNumber: 'ORD-2024-003',
-    creatorId: 'creator_3',
-    creatorName: 'Emma Wilson',
-    creatorAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
-    services: [
-      { type: 'reel', quantity: 2, price: 450 },
-    ],
-    total: 900,
-    status: 'pending',
-    createdAt: '2024-11-26T09:00:00Z',
-  },
-];
-
-const statusConfig = {
-  pending: { icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
-  'in-progress': { icon: Package, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  completed: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
-  cancelled: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
+const statusConfig: Record<string, { icon: any; color: string; label: string }> = {
+  PENDING: { icon: Clock, color: 'bg-yellow-500/10 text-yellow-600', label: 'Pending' },
+  SIGNED: { icon: CheckCircle2, color: 'bg-blue-500/10 text-blue-600', label: 'Signed' },
+  IN_PROGRESS: { icon: Clock, color: 'bg-purple-500/10 text-purple-600', label: 'In Progress' },
+  COMPLETED: { icon: CheckCircle2, color: 'bg-green-500/10 text-green-600', label: 'Completed' },
+  CANCELLED: { icon: XCircle, color: 'bg-red-500/10 text-red-600', label: 'Cancelled' },
 };
 
 export default function Orders() {
-  const [filter, setFilter] = useState<string>('all');
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
 
-  const filteredOrders = filter === 'all' 
-    ? mockOrders 
-    : mockOrders.filter(o => o.status === filter);
+  useEffect(() => {
+    loadContracts();
+  }, []);
+
+  const loadContracts = async () => {
+    try {
+      const data = await contractsApi.getAll();
+      setContracts(data);
+    } catch (error) {
+      console.error('Failed to load contracts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      await contractsApi.updateStatus(id, status);
+      toast({ title: `Contract ${status.toLowerCase()}` });
+      loadContracts();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update contract status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const filteredContracts = activeTab === 'all' 
+    ? contracts 
+    : contracts.filter(c => c.status.toLowerCase() === activeTab);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-muted/30 pt-16 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-muted/30 pt-16">
@@ -105,143 +99,128 @@ export default function Orders() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-3xl font-bold mb-2">My Orders</h1>
-          <p className="text-muted-foreground mb-8">Track and manage your creator bookings</p>
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">My Orders</h1>
+            <p className="text-muted-foreground">
+              {user?.role === 'BRAND' ? 'Contracts with creators' : 'Your active contracts'}
+            </p>
+          </div>
 
-          <Tabs value={filter} onValueChange={setFilter} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
-              <TabsTrigger value="all">All Orders</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
-              <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+              <TabsTrigger value="in_progress">In Progress</TabsTrigger>
               <TabsTrigger value="completed">Completed</TabsTrigger>
             </TabsList>
 
-            <TabsContent value={filter} className="space-y-4">
-              {filteredOrders.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No orders found</h3>
-                  <p className="text-muted-foreground">
-                    {filter === 'all' 
-                      ? "You haven't placed any orders yet" 
-                      : `No ${filter} orders`}
-                  </p>
+            <TabsContent value={activeTab} className="mt-6">
+              {filteredContracts.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
+                    <p className="text-muted-foreground">
+                      {user?.role === 'BRAND' 
+                        ? 'Browse the marketplace to hire creators'
+                        : 'Apply to campaigns or wait for brands to hire you'}
+                    </p>
+                  </CardContent>
                 </Card>
               ) : (
-                filteredOrders.map((order, index) => {
-                  const StatusIcon = statusConfig[order.status].icon;
-                  
-                  return (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Card className="card-hover">
-                        <CardContent className="p-6">
-                          <div className="flex flex-col md:flex-row gap-6">
-                            <Avatar className="w-16 h-16 shrink-0">
-                              <AvatarImage src={order.creatorAvatar} alt={order.creatorName} />
-                              <AvatarFallback>{order.creatorName.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                <div className="space-y-4">
+                  {filteredContracts.map((contract, index) => {
+                    const StatusIcon = statusConfig[contract.status]?.icon || Clock;
+                    const otherParty = user?.role === 'BRAND' ? contract.creator : contract.brand;
 
-                            <div className="flex-1 space-y-3">
-                              <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                  <h3 className="font-semibold text-lg">{order.creatorName}</h3>
-                                  <p className="text-sm text-muted-foreground">{order.orderNumber}</p>
+                    return (
+                      <motion.div
+                        key={contract.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <Card>
+                          <CardContent className="p-6">
+                            <div className="flex items-start gap-4">
+                              <Avatar className="w-12 h-12">
+                                <AvatarImage src={otherParty?.avatar} />
+                                <AvatarFallback>
+                                  {otherParty?.displayName?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              <div className="flex-1">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h3 className="font-semibold">{contract.title}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                      {user?.role === 'BRAND' ? 'Creator: ' : 'Brand: '}
+                                      {otherParty?.displayName || 'Unknown'}
+                                    </p>
+                                  </div>
+                                  <Badge className={statusConfig[contract.status]?.color}>
+                                    <StatusIcon className="w-3 h-3 mr-1" />
+                                    {statusConfig[contract.status]?.label || contract.status}
+                                  </Badge>
                                 </div>
-                                <Badge 
-                                  variant="secondary"
-                                  className={`${statusConfig[order.status].bg} ${statusConfig[order.status].color}`}
-                                >
-                                  <StatusIcon className="w-3 h-3 mr-1" />
-                                  {order.status.replace('-', ' ')}
-                                </Badge>
-                              </div>
 
-                              <div className="space-y-1">
-                                {order.services.map((service, i) => (
-                                  <p key={i} className="text-sm text-muted-foreground">
-                                    {service.quantity}x {service.type} @ ${service.price} = ${service.quantity * service.price}
-                                  </p>
-                                ))}
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-2 pt-2">
-                                <span className="text-sm text-muted-foreground">
-                                  Ordered: {new Date(order.createdAt).toLocaleDateString()}
-                                </span>
-                                {order.completedAt && (
-                                  <>
-                                    <span className="text-muted-foreground">•</span>
-                                    <span className="text-sm text-muted-foreground">
-                                      Completed: {new Date(order.completedAt).toLocaleDateString()}
+                                <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
+                                  <span className="font-semibold text-foreground text-lg">
+                                    ${contract.amount}
+                                  </span>
+                                  <span>
+                                    Created {new Date(contract.createdAt).toLocaleDateString()}
+                                  </span>
+                                  {contract.completedAt && (
+                                    <span>
+                                      Completed {new Date(contract.completedAt).toLocaleDateString()}
                                     </span>
-                                  </>
-                                )}
-                              </div>
+                                  )}
+                                </div>
 
-                              <div className="flex flex-wrap gap-2 pt-2">
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <Button variant="outline" size="sm">
-                                      <Eye className="w-4 h-4 mr-2" />
-                                      View Details
+                                <div className="flex gap-2">
+                                  {contract.status === 'PENDING' && user?.role === 'CREATOR' && (
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleUpdateStatus(contract.id, 'SIGNED')}
+                                    >
+                                      Accept Contract
                                     </Button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Order Details</DialogTitle>
-                                      <DialogDescription>{order.orderNumber}</DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4">
-                                      <div>
-                                        <h4 className="font-medium mb-2">Services</h4>
-                                        {order.services.map((service, i) => (
-                                          <div key={i} className="flex justify-between text-sm">
-                                            <span>{service.quantity}x {service.type}</span>
-                                            <span>${service.quantity * service.price}</span>
-                                          </div>
-                                        ))}
-                                        <div className="flex justify-between font-bold mt-2 pt-2 border-t">
-                                          <span>Total</span>
-                                          <span>${order.total}</span>
-                                        </div>
-                                      </div>
-                                      {order.deliverables && (
-                                        <div>
-                                          <h4 className="font-medium mb-2">Deliverables</h4>
-                                          <div className="space-y-2">
-                                            {order.deliverables.map((file, i) => (
-                                              <Button key={i} variant="outline" size="sm" className="w-full justify-between">
-                                                {file.name}
-                                                <Download className="w-4 h-4" />
-                                              </Button>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                                <Button variant="outline" size="sm">
-                                  <MessageSquare className="w-4 h-4 mr-2" />
-                                  Message Creator
-                                </Button>
+                                  )}
+                                  {contract.status === 'SIGNED' && (
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleUpdateStatus(contract.id, 'IN_PROGRESS')}
+                                    >
+                                      Start Work
+                                    </Button>
+                                  )}
+                                  {contract.status === 'IN_PROGRESS' && user?.role === 'CREATOR' && (
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => handleUpdateStatus(contract.id, 'COMPLETED')}
+                                    >
+                                      Mark Complete
+                                    </Button>
+                                  )}
+                                  <Button size="sm" variant="outline">
+                                    <MessageSquare className="w-4 h-4 mr-2" />
+                                    Message
+                                  </Button>
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    View Details
+                                  </Button>
+                                </div>
                               </div>
                             </div>
-
-                            <div className="text-right">
-                              <p className="text-2xl font-bold">${order.total}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               )}
             </TabsContent>
           </Tabs>

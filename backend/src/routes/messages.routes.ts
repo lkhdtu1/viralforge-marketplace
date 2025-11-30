@@ -173,6 +173,114 @@ router.get('/sent', authenticate, pagination, async (req, res, next) => {
   }
 });
 
+// Get conversations (list of users you've messaged with)
+router.get('/conversations', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    
+    // Get all messages where user is sender or receiver
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            displayName: true,
+            avatar: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            displayName: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    // Group by conversation partner
+    const conversationsMap = new Map();
+    
+    messages.forEach((message) => {
+      const partnerId = message.senderId === userId ? message.receiverId : message.senderId;
+      const partner = message.senderId === userId ? message.receiver : message.sender;
+      
+      if (!conversationsMap.has(partnerId)) {
+        conversationsMap.set(partnerId, {
+          userId: partnerId,
+          userName: partner.displayName || 'User',
+          userAvatar: partner.avatar,
+          lastMessage: message.content,
+          lastMessageTime: message.createdAt,
+          unreadCount: 0,
+        });
+      }
+      
+      // Count unread messages from this partner
+      if (message.receiverId === userId && !message.isRead) {
+        conversationsMap.get(partnerId).unreadCount++;
+      }
+    });
+
+    const conversations = Array.from(conversationsMap.values());
+    
+    res.json({
+      success: true,
+      data: conversations,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get messages with specific user
+router.get('/with/:userId', authenticate, async (req, res, next) => {
+  try {
+    const currentUserId = req.user!.id;
+    const { userId } = req.params;
+    
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: currentUserId, receiverId: userId },
+          { senderId: userId, receiverId: currentUserId },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            displayName: true,
+            avatar: true,
+          },
+        },
+        receiver: {
+          select: {
+            id: true,
+            displayName: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+    
+    res.json({
+      success: true,
+      data: messages,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get message by ID
 router.get('/:id', authenticate, async (req, res, next) => {
   try {

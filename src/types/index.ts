@@ -2,11 +2,11 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  displayName?: string;
   avatar?: string;
   role: 'creator' | 'brand' | 'admin';
-  verified: boolean;
-  createdAt: string;
+  verified?: boolean;
+  createdAt?: string;
 }
 
 // Campaign types

@@ -17,6 +17,63 @@ const router = Router();
  *   description: Creator marketplace endpoints
  */
 
+// Get all creators (discovery)
+router.get('/creators', pagination, async (req, res, next) => {
+  try {
+    const paginationParams = req.pagination!;
+    const { search, verified, minFollowers, platform } = req.query;
+
+    const where: any = {
+      role: UserRole.CREATOR,
+      isActive: true,
+    };
+
+    if (verified === 'true') {
+      where.isVerified = true;
+    }
+
+    if (search) {
+      where.OR = [
+        { displayName: { contains: search as string, mode: 'insensitive' } },
+        { bio: { contains: search as string, mode: 'insensitive' } },
+      ];
+    }
+
+    const [creators, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip: paginationParams.skip,
+        take: paginationParams.limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          displayName: true,
+          avatar: true,
+          bio: true,
+          isVerified: true,
+          socialLinks: true,
+          createdAt: true,
+          listings: {
+            where: { status: ListingStatus.ACTIVE },
+            take: 3,
+            select: {
+              id: true,
+              title: true,
+              price: true,
+              platform: true,
+            },
+          },
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
+
+    res.json(paginatedResponse(creators, total, paginationParams));
+  } catch (error) {
+    next(error);
+  }
+});
+
 /**
  * @swagger
  * /api/v1/marketplace:

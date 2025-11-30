@@ -15,6 +15,8 @@ import {
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/users.routes';
 import campaignRoutes from './routes/campaigns.routes';
+import contractRoutes from './routes/contracts.routes';
+import listingRoutes from './routes/listings.routes';
 import marketplaceRoutes from './routes/marketplace.routes';
 import escrowRoutes from './routes/escrow.routes';
 import checkoutRoutes from './routes/checkout.routes';
@@ -178,6 +180,8 @@ apiRouter.use('/webhooks', webhookRouter);
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/campaigns', campaignRoutes);
+apiRouter.use('/contracts', contractRoutes);
+apiRouter.use('/listings', listingRoutes);
 apiRouter.use('/marketplace', marketplaceRoutes);
 apiRouter.use('/escrow', escrowRoutes);
 apiRouter.use('/checkout', checkoutRoutes);
