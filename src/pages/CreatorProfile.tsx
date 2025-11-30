@@ -117,7 +117,7 @@ export default function CreatorProfile() {
               <p className="text-foreground mb-4 max-w-2xl">{creator.bio || 'No bio available'}</p>
 
               <div className="flex flex-wrap gap-3 mb-4">
-                <Button onClick={() => navigate('/messages')}>
+                <Button onClick={() => navigate(`/messages?userId=${creator.id}`)}>
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Message
                 </Button>

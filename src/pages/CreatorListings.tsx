@@ -74,7 +74,7 @@ export default function CreatorListings() {
 
   const loadListings = async () => {
     try {
-      const data = await listingsApi.getAll({ status: 'ACTIVE' });
+      const data = await listingsApi.getAll({ creatorId: user?.id });
       setListings(data);
     } catch (error) {
       console.error('Failed to load listings:', error);
@@ -193,7 +193,7 @@ export default function CreatorListings() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-muted/30 pt-16">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex items-center justify-between mb-8">
           <div>
