@@ -11,8 +11,12 @@ import {
   User,
   LogOut,
   Settings,
-  LayoutDashboard
+  LayoutDashboard,
+  ShoppingCart,
+  Package
 } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import {
@@ -57,6 +61,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { itemCount } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -112,6 +117,18 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           
+          {/* Cart Icon */}
+          <Link to="/cart">
+            <Button variant="ghost" size="icon-sm" className="relative" aria-label="Shopping cart">
+              <ShoppingCart className="h-4 w-4" />
+              {itemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center">
+                  {itemCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
+          
           {isAuthenticated ? (
             <>
               {/* Notifications */}
@@ -144,6 +161,12 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                     <Link to="/dashboard" className="cursor-pointer">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders" className="cursor-pointer">
+                      <Package className="mr-2 h-4 w-4" />
+                      My Orders
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
