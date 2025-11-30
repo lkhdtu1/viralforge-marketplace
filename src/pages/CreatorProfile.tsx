@@ -16,8 +16,10 @@ import {
   ExternalLink,
   TrendingUp,
   Users,
-  DollarSign
+  DollarSign,
+  ShoppingCart
 } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +46,7 @@ export default function CreatorProfile() {
   const { id } = useParams<{ id: string }>();
   const [creator, setCreator] = useState<Creator | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { addItem } = useCart();
 
   useEffect(() => {
     const loadCreator = async () => {
@@ -302,19 +305,45 @@ export default function CreatorProfile() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="w-5 h-5 text-primary" />
-                  Pricing
+                  Pricing & Booking
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {Object.entries(creator.pricing).map(([type, price]) => (
-                  <div key={type} className="flex items-center justify-between p-3 bg-muted rounded-xl">
-                    <span className="capitalize">{type}</span>
-                    <span className="font-semibold">${price}</span>
+                  <div key={type} className="flex items-center justify-between p-3 bg-muted rounded-xl group">
+                    <div>
+                      <span className="capitalize font-medium">{type}</span>
+                      <p className="text-sm text-muted-foreground">per {type}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">${price}</span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => addItem({
+                          creatorId: creator.id,
+                          creatorName: creator.name,
+                          creatorAvatar: creator.avatar,
+                          serviceType: type as 'post' | 'story' | 'video' | 'reel',
+                          price: price,
+                        })}
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
-                <Button variant="hero" className="w-full" size="lg">
-                  Invite to Campaign
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="hero" className="flex-1" size="lg">
+                    Invite to Campaign
+                  </Button>
+                  <Link to="/cart" className="shrink-0">
+                    <Button variant="outline" size="lg">
+                      <ShoppingCart className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
               </CardContent>
             </Card>
           </div>
