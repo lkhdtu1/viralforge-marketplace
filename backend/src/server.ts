@@ -212,7 +212,7 @@ app.use((req: Request, res: Response) => {
 // Start server
 const PORT = env.PORT;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
   logger.info(`🏥 Health Check: http://localhost:${PORT}/health`);

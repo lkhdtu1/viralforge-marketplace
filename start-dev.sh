@@ -39,16 +39,14 @@ cd ..
 
 # Wait for backend to start
 echo "⏳ Waiting for backend to start..."
-sleep 5
-
-# Check if backend is running
-if curl -s http://localhost:3001/health > /dev/null; then
-    echo "✅ Backend is running on http://localhost:3001"
-    echo "📚 API Docs: http://localhost:3001/api-docs"
-else
-    echo "❌ Backend failed to start. Check logs: tail -f /tmp/viralforge-backend.log"
-    exit 1
-fi
+for i in {1..20}; do
+    if curl -s http://localhost:3001/health > /dev/null 2>&1; then
+        echo "✅ Backend is running on http://localhost:3001"
+        echo "📚 API Docs: http://localhost:3001/api-docs"
+        break
+    fi
+    sleep 1
+done
 
 # Start frontend
 echo "🎨 Starting frontend server..."
