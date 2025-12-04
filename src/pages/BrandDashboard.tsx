@@ -77,7 +77,7 @@ export default function Dashboard() {
         ]);
         
         // Filter campaigns by current user if they're a brand
-        const userCampaigns = user.role === 'BRAND' 
+        const userCampaigns = user.role === 'brand' 
           ? campaignsData.filter(c => c.brandId === user.id)
           : campaignsData;
         
@@ -304,7 +304,7 @@ export default function Dashboard() {
                         <h3 className="font-medium truncate">{campaign.title}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="w-3 h-3" />
-                          <span>{campaign.endDate ? new Date(campaign.endDate).toLocaleDateString() : 'No deadline'}</span>
+                          <span>{campaign.deadline ? new Date(campaign.deadline).toLocaleDateString() : 'No deadline'}</span>
                         </div>
                       </div>
                     </div>

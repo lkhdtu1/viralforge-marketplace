@@ -25,6 +25,7 @@ const plans = {
     name: 'Starter',
     price: 0,
     description: 'Perfect for creators just getting started with brand partnerships',
+    userType: 'For Creators',
     features: [
       'Create professional profile & portfolio',
       'Apply to 5 campaigns per month',
@@ -35,7 +36,7 @@ const plans = {
     ],
     limits: [
       '5 campaign applications/month',
-      'Standard support response time',
+      'Standard support (48hr response)',
       'Basic profile customization',
     ],
     cta: 'Start Free',
@@ -47,18 +48,19 @@ const plans = {
     icon: Zap,
     name: 'Pro',
     price: 49,
-    description: 'For serious creators and small brands ready to scale',
+    description: 'For serious creators and growing brands ready to scale partnerships',
+    userType: 'For Creators & Brands',
     features: [
       'Everything in Starter, plus:',
       'Unlimited campaign applications',
-      'Advanced analytics & insights',
-      'Virality score tracking',
+      'Verified creator/brand badge',
+      'Advanced analytics & virality tracking',
       'Priority support (24hr response)',
-      'Verified creator badge',
       'Early access to new campaigns',
-      'Portfolio customization',
-      'Performance reports (weekly)',
+      'Custom portfolio themes',
+      'Weekly performance reports',
       'Media kit generator',
+      'Direct brand/creator outreach',
     ],
     limits: [],
     cta: 'Start Pro Trial',
@@ -70,19 +72,21 @@ const plans = {
     icon: Building2,
     name: 'Enterprise',
     price: 199,
-    description: 'For agencies and large brands managing multiple campaigns',
+    description: 'For agencies and large brands managing multiple campaigns at scale',
+    userType: 'For Agencies & Large Brands',
     features: [
       'Everything in Pro, plus:',
       'Unlimited team members',
       'Custom API integrations',
       'Dedicated account manager',
-      'White-label options',
+      'White-label campaign pages',
       'Custom contract templates',
-      'Bulk creator outreach',
+      'Bulk creator outreach (up to 100/day)',
       'Advanced team collaboration',
       'Priority platform features',
       'Custom analytics dashboards',
       'Quarterly strategy sessions',
+      'SLA-backed uptime guarantee',
     ],
     limits: [],
     cta: 'Contact Sales',
@@ -144,7 +148,8 @@ export default function PricingPlans() {
                     )}
                   </div>
                   <CardTitle className="text-3xl">{selectedPlan.name}</CardTitle>
-                  <p className="text-muted-foreground">{selectedPlan.description}</p>
+                  <Badge variant="outline" className="w-fit">{selectedPlan.userType}</Badge>
+                  <p className="text-muted-foreground mt-2">{selectedPlan.description}</p>
                 </CardHeader>
 
                 <CardContent className="relative space-y-8">
@@ -258,7 +263,8 @@ export default function PricingPlans() {
                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
                           <Icon className="w-6 h-6 text-primary" />
                         </div>
-                        <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                        <h3 className="text-2xl font-bold mb-1">{plan.name}</h3>
+                        <Badge variant="outline" className="mb-2 text-xs">{plan.userType}</Badge>
                         <p className="text-sm text-muted-foreground">{plan.description}</p>
                       </div>
 

@@ -153,11 +153,11 @@ export default function CreatorDashboard() {
                         <p className="text-sm text-muted-foreground">Budget</p>
                         <p className="font-semibold">${campaign.budget.toLocaleString()}</p>
                       </div>
-                      {campaign.endDate && (
+                      {campaign.deadline && (
                         <div className="text-right">
                           <p className="text-sm text-muted-foreground">Deadline</p>
                           <p className="font-semibold text-sm">
-                            {new Date(campaign.endDate).toLocaleDateString()}
+                            {new Date(campaign.deadline).toLocaleDateString()}
                           </p>
                         </div>
                       )}

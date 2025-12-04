@@ -139,8 +139,8 @@ export default function CampaignBuilder() {
         title: draft.brief.title,
         description: draft.brief.description,
         budget: draft.budget.total,
-        requirements: draft.brief.requirements.length > 0 ? draft.brief.requirements.join(', ') : undefined,
-        endDate: draft.distribution.timeline.end ? new Date(draft.distribution.timeline.end).toISOString() : undefined,
+        requirements: draft.brief.requirements.length > 0 ? draft.brief.requirements : undefined,
+        deadline: draft.distribution.timeline.end ? new Date(draft.distribution.timeline.end).toISOString() : undefined,
       };
 
       console.log('Creating campaign with data:', campaignData);
