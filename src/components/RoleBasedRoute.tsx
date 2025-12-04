@@ -18,7 +18,5 @@ export default function RoleBasedRoute() {
     return <Navigate to="/auth" replace />;
   }
   
-  return user.role === 'creator' || user.role === 'CREATOR' 
-    ? <CreatorDashboard /> 
-    : <BrandDashboard />;
+  return user.role === 'creator' ? <CreatorDashboard /> : <BrandDashboard />;
 }

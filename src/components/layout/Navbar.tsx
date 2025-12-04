@@ -70,6 +70,7 @@ const navLinks: NavLink[] = [
 ];
 
 const authNavLinks: NavLink[] = [
+  { href: '/', label: 'Home' },
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/discover', label: 'Discover', icon: Zap },
   { href: '/messages', label: 'Messages', icon: MessageSquare },
@@ -229,7 +230,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                               >
                                 <MessageSquare className="h-4 w-4" />
                               </Button>
-                              {result.role === 'CREATOR' && (
+                              {result.role === 'creator' && (
                                 <Button
                                   size="sm"
                                   variant="ghost"

@@ -92,10 +92,10 @@ export default function Campaigns() {
                   <DollarSign className="w-4 h-4 text-primary" />
                   <span className="font-semibold">${campaign.budget.toLocaleString()}</span>
                 </div>
-                {campaign.endDate && (
+                {campaign.deadline && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary" />
-                    <span>Ends {new Date(campaign.endDate).toLocaleDateString()}</span>
+                    <span>Ends {new Date(campaign.deadline).toLocaleDateString()}</span>
                   </div>
                 )}
               </div>

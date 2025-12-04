@@ -1,6 +1,7 @@
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { Chatbot } from '@/components/Chatbot';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Layout() {
@@ -38,6 +39,7 @@ export function Layout() {
         <Outlet />
       </main>
       {!isDashboardPage && <Footer />}
+      <Chatbot />
     </div>
   );
 }

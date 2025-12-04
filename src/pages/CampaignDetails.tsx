@@ -108,7 +108,7 @@ export default function CampaignDetails() {
                   <CardTitle className="text-3xl mb-2">{campaign.title}</CardTitle>
                   <Badge>{campaign.status}</Badge>
                 </div>
-                {user?.role === 'creator' || user?.role === 'CREATOR' ? (
+                {user?.role === 'creator' ? (
                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="lg">Apply to Campaign</Button>
@@ -171,12 +171,12 @@ export default function CampaignDetails() {
                     <p className="font-semibold">${campaign.budget.toLocaleString()}</p>
                   </div>
                 </div>
-                {campaign.endDate && (
+                {campaign.deadline && (
                   <div className="flex items-center gap-3">
                     <Calendar className="w-5 h-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Deadline</p>
-                      <p className="font-semibold">{new Date(campaign.endDate).toLocaleDateString()}</p>
+                      <p className="font-semibold">{new Date(campaign.deadline).toLocaleDateString()}</p>
                     </div>
                   </div>
                 )}

@@ -102,7 +102,7 @@ export default function Orders() {
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">My Orders</h1>
             <p className="text-muted-foreground">
-              {user?.role === 'BRAND' ? 'Contracts with creators' : 'Your active contracts'}
+              {user?.role === 'brand' ? 'Contracts with creators' : 'Your active contracts'}
             </p>
           </div>
 
@@ -121,7 +121,7 @@ export default function Orders() {
                     <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                     <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
                     <p className="text-muted-foreground">
-                      {user?.role === 'BRAND' 
+                      {user?.role === 'brand'
                         ? 'Browse the marketplace to hire creators'
                         : 'Apply to campaigns or wait for brands to hire you'}
                     </p>
@@ -131,7 +131,7 @@ export default function Orders() {
                 <div className="space-y-4">
                   {filteredContracts.map((contract, index) => {
                     const StatusIcon = statusConfig[contract.status]?.icon || Clock;
-                    const otherParty = user?.role === 'BRAND' ? contract.creator : contract.brand;
+                    const otherParty = user?.role === 'brand' ? contract.creator : contract.brand;
 
                     return (
                       <motion.div
@@ -155,7 +155,7 @@ export default function Orders() {
                                   <div>
                                     <h3 className="font-semibold">{contract.title}</h3>
                                     <p className="text-sm text-muted-foreground">
-                                      {user?.role === 'BRAND' ? 'Creator: ' : 'Brand: '}
+                                      {user?.role === 'brand' ? 'Creator: ' : 'Brand: '}
                                       {otherParty?.displayName || 'Unknown'}
                                     </p>
                                   </div>
@@ -180,7 +180,7 @@ export default function Orders() {
                                 </div>
 
                                 <div className="flex gap-2">
-                                  {contract.status === 'PENDING' && user?.role === 'CREATOR' && (
+                                  {contract.status === 'PENDING' && user?.role === 'creator' && (
                                     <Button 
                                       size="sm" 
                                       onClick={() => handleUpdateStatus(contract.id, 'SIGNED')}
@@ -196,7 +196,7 @@ export default function Orders() {
                                       Start Work
                                     </Button>
                                   )}
-                                  {contract.status === 'IN_PROGRESS' && user?.role === 'CREATOR' && (
+                                  {contract.status === 'IN_PROGRESS' && user?.role === 'creator' && (
                                     <Button 
                                       size="sm" 
                                       onClick={() => handleUpdateStatus(contract.id, 'COMPLETED')}
