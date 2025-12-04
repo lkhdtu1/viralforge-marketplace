@@ -79,8 +79,8 @@ export default {
         "3xl": "1.5rem",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "system-ui", "sans-serif"],
       },
       fontSize: {
         "display-xl": ["4.5rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
