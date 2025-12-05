@@ -12,8 +12,8 @@ import {
   LogOut,
   Settings,
   LayoutDashboard,
-  ShoppingCart,
-  Package,
+  Briefcase,
+  ClipboardList,
   Search
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
@@ -256,10 +256,10 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
             </Popover>
           )}
           
-          {/* Cart Icon */}
-          <Link to="/cart">
-            <Button variant="ghost" size="icon-sm" className="relative" aria-label="Shopping cart">
-              <ShoppingCart className="h-4 w-4" />
+          {/* Bookings Icon */}
+          <Link to="/bookings">
+            <Button variant="ghost" size="icon-sm" className="relative" aria-label="Service bookings">
+              <Briefcase className="h-4 w-4" />
               {itemCount > 0 && (
                 <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center">
                   {itemCount}
@@ -304,7 +304,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/orders" className="cursor-pointer">
-                      <Package className="mr-2 h-4 w-4" />
+                      <ClipboardList className="mr-2 h-4 w-4" />
                       My Orders
                     </Link>
                   </DropdownMenuItem>

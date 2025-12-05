@@ -1,16 +1,26 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   FileText, 
   Shield, 
   Cookie,
-  ArrowLeft
+  ArrowLeft,
+  Globe
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Legal() {
+  const location = useLocation();
+  
+  const getDefaultTab = () => {
+    if (location.pathname === '/privacy') return 'privacy';
+    if (location.pathname === '/cookies') return 'cookies';
+    if (location.pathname === '/gdpr') return 'gdpr';
+    return 'terms';
+  };
+
   return (
     <div className="min-h-screen bg-muted/30 pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-4xl">
@@ -30,8 +40,8 @@ export default function Legal() {
             Our policies and terms to keep you informed
           </p>
 
-          <Tabs defaultValue="terms">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+          <Tabs defaultValue={getDefaultTab()}>
+            <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="terms" className="flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 <span className="hidden sm:inline">Terms</span>
@@ -43,6 +53,10 @@ export default function Legal() {
               <TabsTrigger value="cookies" className="flex items-center gap-2">
                 <Cookie className="w-4 h-4" />
                 <span className="hidden sm:inline">Cookies</span>
+              </TabsTrigger>
+              <TabsTrigger value="gdpr" className="flex items-center gap-2">
+                <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">GDPR</span>
               </TabsTrigger>
             </TabsList>
 
@@ -158,6 +172,46 @@ export default function Legal() {
                   <h3>Third-Party Cookies</h3>
                   <p>
                     We may use third-party services that place cookies on your device. These cookies are governed by the respective privacy policies of these third parties.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="gdpr">
+              <Card>
+                <CardHeader>
+                  <CardTitle>GDPR Compliance</CardTitle>
+                  <p className="text-sm text-muted-foreground">Last updated: November 2024</p>
+                </CardHeader>
+                <CardContent className="prose prose-sm dark:prose-invert max-w-none">
+                  <h3>Your Rights Under GDPR</h3>
+                  <p>
+                    If you are a resident of the European Economic Area (EEA), you have certain data protection rights under the General Data Protection Regulation (GDPR).
+                  </p>
+
+                  <h3>Data Subject Rights</h3>
+                  <ul>
+                    <li><strong>Right to Access:</strong> Request copies of your personal data</li>
+                    <li><strong>Right to Rectification:</strong> Request correction of inaccurate data</li>
+                    <li><strong>Right to Erasure:</strong> Request deletion of your personal data</li>
+                    <li><strong>Right to Restrict Processing:</strong> Request limitation of data processing</li>
+                    <li><strong>Right to Data Portability:</strong> Request transfer of your data</li>
+                    <li><strong>Right to Object:</strong> Object to processing of your personal data</li>
+                  </ul>
+
+                  <h3>Legal Basis for Processing</h3>
+                  <p>
+                    We process your personal data based on: consent, contractual necessity, legal obligations, and legitimate interests.
+                  </p>
+
+                  <h3>Data Protection Officer</h3>
+                  <p>
+                    For GDPR-related inquiries, contact our Data Protection Officer at privacy@viralforge.com.
+                  </p>
+
+                  <h3>International Transfers</h3>
+                  <p>
+                    When we transfer data outside the EEA, we ensure appropriate safeguards are in place, including Standard Contractual Clauses approved by the European Commission.
                   </p>
                 </CardContent>
               </Card>

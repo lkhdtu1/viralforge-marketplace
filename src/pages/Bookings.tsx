@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
+import { Briefcase, Trash2, Plus, Minus, ArrowRight, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 
-export default function Cart() {
+export default function Bookings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -21,7 +21,6 @@ export default function Cart() {
   const handleCheckout = async () => {
     setIsCheckingOut(true);
     try {
-      // Create a contract for each cart item
       const contractPromises = items.map(item =>
         contractsApi.create({
           creatorId: item.creatorId,
@@ -35,15 +34,15 @@ export default function Cart() {
       await Promise.all(contractPromises);
       
       toast({
-        title: 'Orders placed successfully!',
-        description: `${items.length} contract(s) created. Check your orders page.`,
+        title: 'Bookings confirmed!',
+        description: `${items.length} service(s) booked. Check your orders page.`,
       });
       
       clearCart();
       navigate('/orders');
     } catch (error: any) {
       toast({
-        title: 'Checkout failed',
+        title: 'Booking failed',
         description: error.response?.data?.message || 'Failed to create contracts',
         variant: 'destructive',
       });
@@ -60,10 +59,10 @@ export default function Cart() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <ShoppingBag className="w-24 h-24 mx-auto text-muted-foreground mb-6" />
-          <h1 className="text-3xl font-bold mb-2">Your cart is empty</h1>
+          <Calendar className="w-24 h-24 mx-auto text-muted-foreground mb-6" />
+          <h1 className="text-3xl font-bold mb-2">No bookings yet</h1>
           <p className="text-muted-foreground mb-6">
-            Browse the marketplace and add creator services to your cart
+            Browse the marketplace and book creator services
           </p>
           <Link to="/marketplace">
             <Button variant="hero" size="lg">
@@ -85,11 +84,11 @@ export default function Cart() {
         >
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Shopping Cart</h1>
-              <p className="text-muted-foreground">{itemCount} item{itemCount !== 1 ? 's' : ''} in your cart</p>
+              <h1 className="text-3xl font-bold mb-2">Service Bookings</h1>
+              <p className="text-muted-foreground">{itemCount} service{itemCount !== 1 ? 's' : ''} selected</p>
             </div>
             <Button variant="outline" onClick={clearCart}>
-              Clear Cart
+              Clear All
             </Button>
           </div>
 

@@ -26,9 +26,18 @@ import CreatorListings from "./pages/CreatorListings";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import Legal from "./pages/Legal";
-import Cart from "./pages/Cart";
+import Bookings from "./pages/Bookings";
 import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
+// New pages
+import Blog from "./pages/Blog";
+import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
+import Help from "./pages/Help";
+import Guides from "./pages/Guides";
+import Community from "./pages/Community";
+import Partners from "./pages/Partners";
+import API from "./pages/API";
 
 const queryClient = new QueryClient();
 
@@ -52,10 +61,23 @@ const App = () => (
                   <Route path="/marketplace" element={<Marketplace />} />
                   <Route path="/discover" element={<Discover />} />
                   <Route path="/creators/:id" element={<CreatorProfile />} />
-                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/bookings" element={<Bookings />} />
+                  {/* Legal */}
                   <Route path="/terms" element={<Legal />} />
                   <Route path="/privacy" element={<Legal />} />
                   <Route path="/cookies" element={<Legal />} />
+                  <Route path="/gdpr" element={<Legal />} />
+                  {/* Company */}
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/careers" element={<Careers />} />
+                  {/* Resources */}
+                  <Route path="/help" element={<Help />} />
+                  <Route path="/guides" element={<Guides />} />
+                  <Route path="/community" element={<Community />} />
+                  <Route path="/partners" element={<Partners />} />
+                  {/* Product */}
+                  <Route path="/api" element={<API />} />
                 </Route>
 
                 {/* Auth routes */}
