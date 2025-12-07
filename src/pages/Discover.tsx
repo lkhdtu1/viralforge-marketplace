@@ -37,20 +37,34 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { listingsApi } from '@/lib/api';
+import { listingsApi, marketplaceApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 
 interface Creator {
   id: string;
-  displayName?: string;
-  avatar?: string;
-  bio?: string;
-  isVerified: boolean;
-  socialLinks?: any;
+  userId: string;
+  name: string;
+  username: string;
+  avatar: string;
+  bio: string;
+  verified: boolean;
+  isVerified?: boolean;
+  rating: number;
+  reviewCount: number;
+  followers: number;
+  engagement: number;
+  categories: string[];
+  platforms: any[];
+  portfolio: any[];
+  pricing: {
+    post: number;
+    story: number;
+    video: number;
+    reel: number;
+  };
+  completedCampaigns: number;
+  responseTime: string;
   listings: Array<{
     id: string;
     title: string;
@@ -119,10 +133,39 @@ export default function Discover() {
       if (searchQuery) params.search = searchQuery;
       if (verifiedOnly) params.verified = 'true';
       
-      const { data } = await axios.get(`${API_BASE_URL}/marketplace/creators`, { params });
-      setCreators(data.data);
+      const creatorsData = await marketplaceApi.getCreators(params);
+      // Transform API response to match local Creator type
+      const transformedCreators = Array.isArray(creatorsData) 
+        ? creatorsData.map((c: any) => ({
+            id: c.id,
+            userId: c.id,
+            name: c.displayName || 'Creator',
+            username: c.email?.split('@')[0] || 'user',
+            avatar: c.avatar || '',
+            bio: c.bio || '',
+            verified: c.isVerified || false,
+            isVerified: c.isVerified || false,
+            rating: 0,
+            reviewCount: 0,
+            followers: 0,
+            engagement: 0,
+            categories: [],
+            platforms: [],
+            portfolio: [],
+            pricing: { post: 0, story: 0, video: 0, reel: 0 },
+            completedCampaigns: 0,
+            responseTime: '',
+            listings: [],
+          }))
+        : [];
+      setCreators(transformedCreators);
     } catch (error) {
       console.error('Failed to load creators:', error);
+      toast({
+        title: 'Failed to load creators',
+        description: 'Please try again later',
+        variant: 'destructive',
+      });
     } finally {
       setCreatorsLoading(false);
     }
@@ -298,13 +341,13 @@ export default function Discover() {
                           <Avatar className="w-16 h-16">
                             <AvatarImage src={creator.avatar} />
                             <AvatarFallback>
-                              {creator.displayName?.charAt(0) || 'C'}
+                              {creator.name?.charAt(0) || 'C'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold">
-                                {creator.displayName || 'Creator'}
+                                {creator.name || 'Creator'}
                               </h3>
                               {creator.isVerified && (
                                 <CheckCircle2 className="w-4 h-4 text-primary" />

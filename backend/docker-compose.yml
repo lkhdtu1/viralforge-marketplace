@@ -10,7 +10,8 @@ services:
       POSTGRES_PASSWORD: viralforge_dev_password
       POSTGRES_DB: viralforge
     ports:
-      - "5432:5432"
+      # Use a non-default host port to avoid conflicts with any local Postgres
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

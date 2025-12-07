@@ -21,8 +21,14 @@ export const helmetMiddleware = helmet({
 
 // CORS configuration
 // OWASP: Restrict CORS to prevent unauthorized cross-origin requests
+// In development, we relax CORS to avoid friction with varying frontend ports.
 export const corsMiddleware = cors({
   origin: (origin, callback) => {
+    // Allow all origins in development for easier local testing
+    if (env.NODE_ENV === 'development') {
+      return callback(null, true);
+    }
+
     const allowedOrigins = env.CORS_ORIGIN.split(',');
     
     // Allow requests with no origin (mobile apps, Postman, etc.)

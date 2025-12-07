@@ -2,6 +2,8 @@ import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
 import { Chatbot } from '@/components/Chatbot';
+import { CookieConsent } from '@/components/CookieConsent';
+import { AIGrowthCoach } from '@/components/AIGrowthCoach';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Layout() {
@@ -40,6 +42,8 @@ export function Layout() {
       </main>
       {!isDashboardPage && <Footer />}
       <Chatbot />
+      <CookieConsent />
+      {isAuthenticated && <AIGrowthCoach />}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   CheckCircle2, 
   ArrowRight, 
@@ -12,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -117,7 +119,51 @@ const faqs = [
 
 export default function PricingPlans() {
   const { planType } = useParams<{ planType?: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const { toast } = useToast();
   const selectedPlan = planType && planType in plans ? plans[planType as keyof typeof plans] : null;
+
+  const handlePlanClick = (planKey: string, planLink: string) => {
+    // If user is already authenticated, check their current plan
+    if (isAuthenticated) {
+      // Default all users are on Starter (free) plan
+      const currentPlan = 'starter';
+      
+      if (planKey === 'starter') {
+        // Already on free plan
+        toast({
+          title: 'You\'re on the Starter plan',
+          description: 'You already have access to all Starter features.',
+        });
+        navigate('/dashboard');
+      } else if (planKey === 'pro') {
+        // Upgrade to Pro
+        toast({
+          title: 'Upgrade to Pro',
+          description: 'Redirecting to checkout...',
+        });
+        // In production, redirect to Stripe checkout
+        setTimeout(() => {
+          toast({
+            title: 'Checkout Coming Soon',
+            description: 'Payment integration will be available soon. Contact support for manual upgrade.',
+          });
+        }, 1000);
+        navigate('/dashboard');
+      } else if (planKey === 'enterprise') {
+        // Enterprise - contact sales
+        toast({
+          title: 'Enterprise Plan',
+          description: 'Please contact our sales team for enterprise pricing.',
+        });
+        navigate('/contact');
+      }
+      return;
+    }
+    // If not authenticated, navigate to signup with plan parameter
+    navigate(planLink);
+  };
 
   // If specific plan is selected, show detailed view
   if (selectedPlan) {
@@ -191,16 +237,15 @@ export default function PricingPlans() {
                     </div>
                   )}
 
-                  <Link to={selectedPlan.ctaLink} className="block">
-                    <Button 
-                      variant="hero" 
-                      size="xl"
-                      className="w-full"
-                    >
-                      {selectedPlan.cta}
-                      <ArrowRight className="w-5 h-5" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    variant="hero" 
+                    size="xl"
+                    className="w-full"
+                    onClick={() => handlePlanClick(planType!, selectedPlan.ctaLink)}
+                  >
+                    {selectedPlan.cta}
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>
@@ -295,14 +340,13 @@ export default function PricingPlans() {
                             View Details
                           </Button>
                         </Link>
-                        <Link to={plan.ctaLink}>
-                          <Button 
-                            variant={plan.popular ? 'hero' : 'default'} 
-                            className="w-full"
-                          >
-                            {plan.cta}
-                          </Button>
-                        </Link>
+                        <Button 
+                          variant={plan.popular ? 'hero' : 'default'} 
+                          className="w-full"
+                          onClick={() => handlePlanClick(key, plan.ctaLink)}
+                        >
+                          {plan.cta}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>

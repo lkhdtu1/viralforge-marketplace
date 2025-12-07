@@ -197,8 +197,8 @@ export default function CreatorListings() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2">My Listings</h1>
-            <p className="text-muted-foreground">Manage your service offerings</p>
+            <h1 className="text-4xl font-bold mb-2">Services Management</h1>
+            <p className="text-muted-foreground">Create, edit, and manage your service offerings</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);

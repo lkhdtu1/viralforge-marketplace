@@ -7,8 +7,28 @@ import { pagination, paginatedResponse } from '../middleware/pagination';
 import { UserRole, CampaignStatus } from '@prisma/client';
 import { NotFoundError, AuthorizationError } from '../utils/errors';
 import { rateLimiter } from '../middleware/security';
+import emailService from '../services/email.service';
+import aiService from '../services/ai.service';
 
 const router = Router();
+
+// Helper function to generate optimization tip
+async function generateOptimizationTip(campaign: any): Promise<string> {
+  try {
+    // Get AI suggestion for campaign optimization
+    const suggestions = await aiService.suggestCampaign(campaign.brandId, {
+      industry: campaign.category,
+      budget: campaign.budget,
+    });
+
+    if (suggestions && suggestions.length > 0) {
+      return suggestions[0].reasoning || 'Consider targeting multiple platforms for maximum reach.';
+    }
+    return 'Consider targeting multiple platforms and using relevant hashtags for maximum reach.';
+  } catch (error) {
+    return 'Consider targeting multiple platforms and using relevant hashtags for maximum reach.';
+  }
+}
 
 /**
  * @swagger
@@ -181,7 +201,33 @@ router.post(
           startDate: campaignData.startDate ? new Date(campaignData.startDate) : undefined,
           endDate: campaignData.endDate ? new Date(campaignData.endDate) : undefined,
         },
+        include: {
+          brand: {
+            select: {
+              id: true,
+              displayName: true,
+              email: true,
+            },
+          },
+        },
       });
+
+      // Send email with AI optimization tip (async, don't wait)
+      (async () => {
+        try {
+          const optimizationTip = await generateOptimizationTip(campaign);
+          await emailService.sendCampaignCreatedEmail(
+            campaign.brand.email,
+            campaign.brand.displayName || campaign.brand.email,
+            campaign.title,
+            campaign.id,
+            optimizationTip
+          );
+        } catch (error) {
+          // Log but don't fail the request
+          console.error('Error sending campaign creation email:', error);
+        }
+      })();
       
       res.status(201).json({
         success: true,

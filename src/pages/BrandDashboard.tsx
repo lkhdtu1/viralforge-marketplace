@@ -15,7 +15,8 @@ import {
   MessageSquare,
   Calendar,
   BarChart3,
-  Zap
+  Zap,
+  Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { campaignsApi, analyticsApi } from '@/lib/api';
+import { campaignsApi, analyticsApi, contractsApi, marketplaceApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Campaign, OverviewMetrics } from '@/types';
 import {
@@ -59,30 +60,45 @@ const statusColors: Record<string, string> = {
   paused: 'bg-warning/10 text-warning border-warning/20',
 };
 
-export default function Dashboard() {
+export default function BrandDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [totalSpent, setTotalSpent] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
-      if (!user) return;
+      if (!user || user.role !== 'brand') return;
       
       try {
-        const [campaignsData, metricsData] = await Promise.all([
-          campaignsApi.getAll({ limit: 5 }),
-          analyticsApi.getOverview()
+        const [campaignsData, metricsData, contractsData] = await Promise.all([
+          campaignsApi.getAll({ limit: 100 }),
+          analyticsApi.getOverview().catch(() => null),
+          contractsApi.getAll({ limit: 100 }).catch(() => [])
         ]);
         
-        // Filter campaigns by current user if they're a brand
-        const userCampaigns = user.role === 'brand' 
-          ? campaignsData.filter(c => c.brandId === user.id)
-          : campaignsData;
+        // Filter campaigns by current user (brand)
+        const userCampaigns = Array.isArray(campaignsData) 
+          ? campaignsData.filter((c: any) => c.brandId === user.id || c.brand?.id === user.id)
+          : [];
         
         setCampaigns(userCampaigns);
         setMetrics(metricsData);
+        
+        // Filter contracts for this brand
+        const brandContracts = Array.isArray(contractsData)
+          ? contractsData.filter((c: any) => c.brandId === user.id)
+          : [];
+        setContracts(brandContracts);
+        
+        // Calculate total spent
+        const spent = brandContracts
+          .filter((c: any) => ['ACCEPTED', 'IN_PROGRESS', 'COMPLETED'].includes(c.status))
+          .reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+        setTotalSpent(spent);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {
@@ -95,31 +111,33 @@ export default function Dashboard() {
   const statCards = [
     {
       title: 'Total Campaigns',
-      value: metrics?.totalCampaigns || 0,
+      value: campaigns.length,
       change: '+12%',
       trend: 'up',
       icon: Megaphone,
     },
     {
       title: 'Active Campaigns',
-      value: metrics?.activeCampaigns || 0,
+      value: campaigns.filter((c: any) => c.status === 'ACTIVE' || c.status === 'active').length,
       change: '+5%',
       trend: 'up',
       icon: TrendingUp,
     },
     {
       title: 'Total Spent',
-      value: `$${(metrics?.totalSpent || 0).toLocaleString()}`,
+      value: `$${totalSpent.toLocaleString()}`,
       change: '+23%',
       trend: 'up',
       icon: DollarSign,
     },
     {
-      title: 'Virality Score',
-      value: metrics?.viralityScore || 0,
-      change: '-2%',
-      trend: 'down',
-      icon: Zap,
+      title: 'Active Contracts',
+      value: contracts.filter((c: any) => 
+        ['PENDING', 'ACCEPTED', 'IN_PROGRESS'].includes(c.status)
+      ).length,
+      change: '+2',
+      trend: 'up',
+      icon: Users,
     },
   ];
 
@@ -127,17 +145,66 @@ export default function Dashboard() {
     <div className="min-h-screen bg-muted/30">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-1">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Brand Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome back, {user?.displayName || 'Brand'}! Manage your campaigns and discover creators.
+              </p>
+            </div>
+            <Link to="/campaigns/new">
+              <Button variant="hero" size="lg" className="w-full md:w-auto">
+                <Plus className="w-5 h-5 mr-2" />
+                Create New Campaign
+              </Button>
+            </Link>
           </div>
-          <Link to="/campaigns/new">
-            <Button variant="hero">
-              <Plus className="w-4 h-4" />
-              New Campaign
-            </Button>
-          </Link>
+          
+          {/* Quick Feature Cards */}
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/campaigns/new')}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Create Campaign</p>
+                    <p className="text-xs text-muted-foreground">Launch a new campaign</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/discover')}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">Find Creators</p>
+                    <p className="text-xs text-muted-foreground">Discover influencers</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/analytics')}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm">View Analytics</p>
+                    <p className="text-xs text-muted-foreground">Track performance</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -229,7 +296,7 @@ export default function Dashboard() {
             </Card>
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Brand Features */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -237,31 +304,44 @@ export default function Dashboard() {
           >
             <Card className="h-full">
               <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle className="text-lg">Brand Features</CardTitle>
+                <CardDescription>Everything you need to grow</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Link to="/campaigns/new" className="block">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button variant="default" className="w-full justify-start bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4 mr-2" />
-                    Create Campaign
+                    Create New Campaign
+                  </Button>
+                </Link>
+                <Link to="/discover" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Users className="w-4 h-4 mr-2" />
+                    Discover Creators
                   </Button>
                 </Link>
                 <Link to="/marketplace" className="block">
                   <Button variant="outline" className="w-full justify-start">
-                    <Users className="w-4 h-4 mr-2" />
-                    Find Creators
+                    <Zap className="w-4 h-4 mr-2" />
+                    Browse Marketplace
                   </Button>
                 </Link>
                 <Link to="/messages" className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <MessageSquare className="w-4 h-4 mr-2" />
-                    View Messages
+                    Messages
                   </Button>
                 </Link>
                 <Link to="/analytics" className="block">
                   <Button variant="outline" className="w-full justify-start">
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    View Analytics
+                    Analytics
+                  </Button>
+                </Link>
+                <Link to="/bookings" className="block">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    My Contracts
                   </Button>
                 </Link>
               </CardContent>
@@ -269,7 +349,7 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
-        {/* Campaigns Table */}
+        {/* My Campaigns Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -279,19 +359,42 @@ export default function Dashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Recent Campaigns</CardTitle>
-                <CardDescription>Your latest campaign performance</CardDescription>
+                <CardTitle className="text-xl">My Campaigns</CardTitle>
+                <CardDescription>Manage and track your campaigns</CardDescription>
               </div>
-              <Link to="/campaigns">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowUpRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <Link to="/campaigns/new">
+                  <Button variant="outline" size="sm">
+                    <Plus className="w-4 h-4 mr-1" />
+                    New Campaign
+                  </Button>
+                </Link>
+                <Link to="/campaigns">
+                  <Button variant="ghost" size="sm">
+                    View All
+                    <ArrowUpRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {campaigns.slice(0, 4).map((campaign) => (
+              {campaigns.length === 0 ? (
+                <div className="text-center py-12">
+                  <Megaphone className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">No campaigns yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Create your first campaign to start working with creators
+                  </p>
+                  <Link to="/campaigns/new">
+                    <Button variant="hero">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Your First Campaign
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {campaigns.slice(0, 5).map((campaign) => (
                   <div
                     key={campaign.id}
                     className="flex items-center justify-between p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
@@ -344,11 +447,76 @@ export default function Dashboard() {
                       </DropdownMenu>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Active Contracts Section */}
+        {contracts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mt-6"
+          >
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl">Active Contracts</CardTitle>
+                    <CardDescription>Contracts with creators</CardDescription>
+                  </div>
+                  <Link to="/bookings">
+                    <Button variant="ghost" size="sm">
+                      View All
+                      <ArrowUpRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {contracts
+                    .filter((c: any) => ['PENDING', 'ACCEPTED', 'IN_PROGRESS'].includes(c.status))
+                    .slice(0, 5)
+                    .map((contract: any) => (
+                      <div key={contract.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <Users className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{contract.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {contract.creator?.displayName || 'Creator'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-semibold">${contract.amount}</p>
+                            <Badge variant={contract.status === 'ACCEPTED' ? 'default' : 'secondary'}>
+                              {contract.status}
+                            </Badge>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate(`/messages?userId=${contract.creatorId}`)}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </div>
   );

@@ -435,7 +435,7 @@ export default function Landing() {
                         </li>
                       ))}
                     </ul>
-                    <Link to={plan.name === 'Enterprise' ? '/pricing/enterprise' : '/auth?mode=signup'}>
+                    <Link to={plan.name === 'Enterprise' ? '/pricing/enterprise' : '/pricing'}>
                       <Button 
                         variant={plan.popular ? 'hero' : 'outline'} 
                         className="w-full"

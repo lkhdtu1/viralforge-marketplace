@@ -12,6 +12,7 @@ import { Layout } from "@/components/layout/Layout";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
 import Products from "./pages/Products";
+import DigitalMarketingPlan from "./pages/DigitalMarketingPlan";
 import PricingPlans from "./pages/PricingPlans";
 import Auth from "./pages/Auth";
 import Marketplace from "./pages/Marketplace";
@@ -28,6 +29,7 @@ import Settings from "./pages/Settings";
 import Legal from "./pages/Legal";
 import Bookings from "./pages/Bookings";
 import Orders from "./pages/Orders";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 // New pages
 import Blog from "./pages/Blog";
@@ -55,7 +57,10 @@ const App = () => (
                 <Route element={<Layout />}>
                   <Route path="/" element={<Landing />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/services" element={<Products />} />
+                  <Route path="/services" element={<Products />} />
                   <Route path="/products" element={<Products />} />
+                  <Route path="/marketing-plan" element={<DigitalMarketingPlan />} />
                   <Route path="/pricing" element={<PricingPlans />} />
                   <Route path="/pricing/:planType" element={<PricingPlans />} />
                   <Route path="/marketplace" element={<Marketplace />} />
@@ -67,6 +72,8 @@ const App = () => (
                   <Route path="/privacy" element={<Legal />} />
                   <Route path="/cookies" element={<Legal />} />
                   <Route path="/gdpr" element={<Legal />} />
+                  <Route path="/aup" element={<Legal />} />
+                  <Route path="/dmca" element={<Legal />} />
                   {/* Company */}
                   <Route path="/blog" element={<Blog />} />
                   <Route path="/contact" element={<Contact />} />
@@ -91,9 +98,11 @@ const App = () => (
                   <Route path="/campaigns/:id" element={<CampaignDetails />} />
                   <Route path="/campaigns/:id/analytics" element={<CampaignAnalytics />} />
                   <Route path="/creator/listings" element={<CreatorListings />} />
+                  <Route path="/services/manage" element={<CreatorListings />} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/settings" element={<Settings />} />
+                  <Route path="/analytics" element={<Analytics />} />
                 </Route>
 
                 {/* 404 */}

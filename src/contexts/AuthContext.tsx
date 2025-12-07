@@ -28,7 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('auth_token');
     if (token) {
       authApi.getCurrentUser()
-        .then(userData => setUser(userData))
+        .then(userData => {
+          // Normalize role to lowercase for frontend consistency
+          setUser({
+            ...userData,
+            role: userData.role.toLowerCase() as 'creator' | 'brand' | 'admin',
+          });
+        })
         .catch(() => {
           localStorage.removeItem('auth_token');
           localStorage.removeItem('refresh_token');
@@ -43,7 +49,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { user: userData, accessToken, refreshToken } = await authApi.login(email, password);
     localStorage.setItem('auth_token', accessToken);
     localStorage.setItem('refresh_token', refreshToken);
-    setUser(userData);
+    // Normalize role to lowercase for frontend consistency
+    setUser({
+      ...userData,
+      role: userData.role.toLowerCase() as 'creator' | 'brand' | 'admin',
+    });
   };
 
   const signup = async (email: string, password: string, role: 'creator' | 'brand', displayName?: string) => {

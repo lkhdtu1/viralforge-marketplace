@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { campaignsApi } from '@/lib/api';
+import { campaignsApi, contractsApi, listingsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Campaign } from '@/types';
 
@@ -27,13 +27,41 @@ export default function CreatorDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [listings, setListings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [activeContracts, setActiveContracts] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!user) return;
+      
       try {
-        const campaignsData = await campaignsApi.getAll({ status: 'ACTIVE', limit: 10 });
-        setCampaigns(campaignsData);
+        const [campaignsData, contractsData, listingsData] = await Promise.all([
+          campaignsApi.getAll({ status: 'ACTIVE', limit: 10 }),
+          contractsApi.getAll({ limit: 100 }).catch(() => []),
+          listingsApi.getAll({ creatorId: user.id }).catch(() => [])
+        ]);
+        
+        setCampaigns(Array.isArray(campaignsData) ? campaignsData : []);
+        
+        const contractsArray = Array.isArray(contractsData) ? contractsData : [];
+        setContracts(contractsArray);
+        
+        // Filter contracts for this creator
+        const myContracts = contractsArray.filter((c: any) => c.creatorId === user.id);
+        setActiveContracts(myContracts.filter((c: any) => 
+          ['PENDING', 'ACCEPTED', 'IN_PROGRESS'].includes(c.status)
+        ).length);
+        
+        // Calculate total earnings from completed contracts
+        const earnings = myContracts
+          .filter((c: any) => c.status === 'COMPLETED')
+          .reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0);
+        setTotalEarnings(earnings);
+        
+        setListings(Array.isArray(listingsData) ? listingsData : []);
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -41,29 +69,36 @@ export default function CreatorDashboard() {
       }
     };
     loadData();
-  }, []);
+  }, [user]);
 
   const statCards = [
     {
       title: 'Total Earnings',
-      value: '$0',
+      value: `$${totalEarnings.toLocaleString()}`,
       change: '+0%',
       icon: DollarSign,
       color: 'text-green-600',
     },
     {
       title: 'Active Contracts',
-      value: '0',
+      value: activeContracts.toString(),
       change: '+0',
       icon: Briefcase,
       color: 'text-blue-600',
     },
     {
+      title: 'My Services',
+      value: listings.length.toString(),
+      change: 'Active',
+      icon: Package,
+      color: 'text-purple-600',
+    },
+    {
       title: 'Available Campaigns',
-      value: campaigns.length,
+      value: campaigns.length.toString(),
       change: 'New',
       icon: Zap,
-      color: 'text-purple-600',
+      color: 'text-orange-600',
     },
   ];
 
@@ -80,14 +115,59 @@ export default function CreatorDashboard() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Creator Dashboard</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Creator Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back, {user?.displayName || 'Creator'}! Browse campaigns and manage your work.
+            Welcome back, {user?.displayName || 'Creator'}! Browse campaigns and manage your services.
           </p>
         </div>
 
+        {/* Quick Feature Cards for Creators */}
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/services/manage')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Package className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Manage Services</p>
+                  <p className="text-xs text-muted-foreground">Create & edit services</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/campaigns')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">Browse Campaigns</p>
+                  <p className="text-xs text-muted-foreground">Apply to opportunities</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors cursor-pointer" onClick={() => navigate('/bookings')}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">My Contracts</p>
+                  <p className="text-xs text-muted-foreground">View bookings</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statCards.map((stat, index) => (
             <motion.div
               key={stat.title}
@@ -184,9 +264,9 @@ export default function CreatorDashboard() {
               <div className="text-center py-8">
                 <Package className="w-12 h-12 mx-auto mb-4 text-primary opacity-50" />
                 <p className="text-muted-foreground mb-4">Create and manage your services</p>
-                <Button onClick={() => navigate('/creator/listings')}>
+                <Button onClick={() => navigate('/services/manage')}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Manage Listings
+                  Manage Services
                 </Button>
               </div>
             </CardContent>
@@ -198,11 +278,36 @@ export default function CreatorDashboard() {
               <CardDescription>Active and pending contracts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No contracts yet</p>
-                <p className="text-sm mt-2">Apply to campaigns to get started</p>
-              </div>
+              {contracts.filter((c: any) => c.creatorId === user?.id).length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Briefcase className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No contracts yet</p>
+                  <p className="text-sm mt-2">Apply to campaigns to get started</p>
+                  <Button variant="outline" className="mt-4" onClick={() => navigate('/campaigns')}>
+                    Browse Campaigns
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {contracts
+                    .filter((c: any) => c.creatorId === user?.id)
+                    .slice(0, 3)
+                    .map((contract: any) => (
+                      <div key={contract.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium text-sm">{contract.title}</p>
+                          <p className="text-xs text-muted-foreground">${contract.amount}</p>
+                        </div>
+                        <Badge variant={contract.status === 'ACCEPTED' ? 'default' : 'secondary'}>
+                          {contract.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  <Button variant="outline" className="w-full mt-2" onClick={() => navigate('/bookings')}>
+                    View All Contracts
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

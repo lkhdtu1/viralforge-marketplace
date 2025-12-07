@@ -25,6 +25,8 @@ import analyticsRoutes from './routes/analytics.routes';
 import searchRoutes from './routes/search.routes';
 import adminRoutes from './routes/admin.routes';
 import webhookRoutes from './routes/webhooks.routes';
+import suggestionsRoutes from './routes/suggestions.routes';
+import gamificationRoutes from './routes/gamification.routes';
 
 // Swagger/OpenAPI setup
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -189,6 +191,8 @@ apiRouter.use('/messages', messageRoutes);
 apiRouter.use('/analytics', analyticsRoutes);
 apiRouter.use('/search', searchRoutes);
 apiRouter.use('/admin', adminRoutes);
+apiRouter.use('/suggest', suggestionsRoutes);
+apiRouter.use('/gamification', gamificationRoutes);
 
 app.use(`/api/${env.API_VERSION}`, apiRouter);
 
@@ -217,16 +221,32 @@ app.listen(PORT, '0.0.0.0', () => {
   logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
   logger.info(`🏥 Health Check: http://localhost:${PORT}/health`);
   logger.info(`🌍 Environment: ${env.NODE_ENV}`);
+
+  // Start cron workers after server starts
+  if (env.NODE_ENV !== 'test') {
+    import('./workers/cron.worker').then((module) => {
+      module.default.start();
+      logger.info('✅ Cron workers started');
+    });
+  }
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+let cronWorker: any = null;
+
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  if (cronWorker) {
+    cronWorker.stop();
+  }
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  if (cronWorker) {
+    cronWorker.stop();
+  }
   process.exit(0);
 });
 

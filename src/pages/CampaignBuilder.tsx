@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import type { CampaignDraft } from '@/types';
 import { campaignsApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 const steps = [
   { id: 'brief', label: 'Brief', icon: FileText },
@@ -90,6 +91,7 @@ const initialDraft: CampaignDraft = {
 export default function CampaignBuilder() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [draft, setDraft] = useState<CampaignDraft>(initialDraft);
   const [newRequirement, setNewRequirement] = useState('');
@@ -99,6 +101,18 @@ export default function CampaignBuilder() {
   const [isLoading, setIsLoading] = useState(false);
 
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  // Check if user is a brand - redirect if not
+  useEffect(() => {
+    if (!authLoading && user && user.role !== 'brand' && user.role !== 'admin') {
+      toast({
+        title: 'Access Restricted',
+        description: 'Only brands can create campaigns. Redirecting...',
+        variant: 'destructive',
+      });
+      navigate('/campaigns');
+    }
+  }, [user, authLoading, navigate, toast]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -113,6 +127,11 @@ export default function CampaignBuilder() {
   };
 
   const handleSubmit = async () => {
+    // Wait for auth to load
+    if (authLoading) {
+      return;
+    }
+
     // Validate required fields
     if (!draft.brief.title || !draft.brief.description) {
       toast({
@@ -132,15 +151,31 @@ export default function CampaignBuilder() {
       return;
     }
 
+    // Double-check role before submission
+    if (!user || (user.role !== 'brand' && user.role !== 'admin')) {
+      toast({
+        title: 'Access Denied',
+        description: 'Only brands can create campaigns. Creators can apply to existing campaigns.',
+        variant: 'destructive',
+      });
+      navigate('/campaigns');
+      return;
+    }
+
     try {
       setIsLoading(true);
       
-      const campaignData = {
+      const campaignData: any = {
         title: draft.brief.title,
         description: draft.brief.description,
         budget: draft.budget.total,
-        requirements: draft.brief.requirements.length > 0 ? draft.brief.requirements : undefined,
-        deadline: draft.distribution.timeline.end ? new Date(draft.distribution.timeline.end).toISOString() : undefined,
+        currency: 'USD',
+        requirements: draft.brief.requirements.length > 0 ? draft.brief.requirements.join('\n') : undefined,
+        endDate: draft.distribution.timeline.end ? new Date(draft.distribution.timeline.end).toISOString() : undefined,
+        startDate: draft.distribution.timeline.start ? new Date(draft.distribution.timeline.start).toISOString() : undefined,
+        targetAudience: draft.distribution.targetAudience ? {
+          interests: draft.distribution.targetAudience.split(',').map(i => i.trim()).filter(Boolean),
+        } : undefined,
       };
 
       console.log('Creating campaign with data:', campaignData);

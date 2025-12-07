@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   User,
@@ -24,19 +24,73 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { authApi, contractsApi } from '@/lib/api';
 
 export default function Settings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [billingData, setBillingData] = useState<any>(null);
+
+  // Load user profile and billing data
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      try {
+        const [userData, contracts] = await Promise.all([
+          authApi.getCurrentUser(),
+          contractsApi.getAll().catch(() => [])
+        ]);
+        
+        setProfile({
+          name: userData.displayName || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
+          email: userData.email,
+          avatar: userData.avatar || '',
+          company: '',
+          website: userData.website || '',
+        });
+
+        // Calculate billing info from contracts
+        const totalSpent = Array.isArray(contracts) 
+          ? contracts.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0)
+          : 0;
+        
+        // Default to Starter plan (free)
+        const currentPlan = {
+          name: 'Starter',
+          price: 0,
+          status: 'Active',
+          renewsAt: null,
+        };
+
+        setBillingData({
+          plan: currentPlan,
+          totalSpent,
+          contractsCount: Array.isArray(contracts) ? contracts.length : 0,
+          billingHistory: [],
+        });
+      } catch (error) {
+        console.error('Failed to load settings data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [user]);
 
   const [profile, setProfile] = useState({
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-    company: 'Acme Inc',
-    website: 'https://example.com',
+    name: '',
+    email: '',
+    avatar: '',
+    company: '',
+    website: '',
   });
 
   const [notifications, setNotifications] = useState({
@@ -224,57 +278,97 @@ export default function Settings() {
                   <CardDescription>Manage your subscription</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between p-4 bg-primary/10 rounded-xl mb-6">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-lg">Pro Plan</span>
-                        <Badge>Active</Badge>
+                  {isLoading ? (
+                    <div className="text-center py-8">Loading...</div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between p-4 bg-primary/10 rounded-xl mb-6">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-lg">{billingData?.plan?.name || 'Starter'} Plan</span>
+                            <Badge>{billingData?.plan?.status || 'Active'}</Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {billingData?.plan?.price === 0 
+                              ? 'Free forever • No credit card required'
+                              : `$${billingData?.plan?.price}/month${billingData?.plan?.renewsAt ? ` • Renews ${new Date(billingData.plan.renewsAt).toLocaleDateString()}` : ''}`
+                            }
+                          </p>
+                        </div>
+                        {billingData?.plan?.price === 0 && (
+                          <Button variant="outline" onClick={() => window.location.href = '/pricing'}>
+                            Upgrade
+                          </Button>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground">$49/month • Renews Dec 15, 2024</p>
-                    </div>
-                    <Button variant="outline">Upgrade</Button>
-                  </div>
 
-                  <h3 className="font-semibold mb-4">Payment Method</h3>
-                  <div className="flex items-center justify-between p-4 border rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-primary-foreground" />
+                      <div className="grid md:grid-cols-2 gap-4 mb-6">
+                        <div className="p-4 border rounded-xl">
+                          <p className="text-sm text-muted-foreground mb-1">Total Spent</p>
+                          <p className="text-2xl font-bold">${(billingData?.totalSpent || 0).toLocaleString()}</p>
+                        </div>
+                        <div className="p-4 border rounded-xl">
+                          <p className="text-sm text-muted-foreground mb-1">Active Contracts</p>
+                          <p className="text-2xl font-bold">{billingData?.contractsCount || 0}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">•••• •••• •••• 4242</p>
-                        <p className="text-sm text-muted-foreground">Expires 12/25</p>
-                      </div>
-                    </div>
-                    <Button variant="ghost" size="sm">Edit</Button>
-                  </div>
+
+                      <h3 className="font-semibold mb-4">Payment Method</h3>
+                      {billingData?.plan?.price === 0 ? (
+                        <div className="p-4 border rounded-xl text-center text-muted-foreground">
+                          <p>No payment method required for free plan</p>
+                          <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/pricing'}>
+                            Add Payment Method
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-4 border rounded-xl">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                              <CreditCard className="w-4 h-4 text-primary-foreground" />
+                            </div>
+                            <div>
+                              <p className="font-medium">•••• •••• •••• ••••</p>
+                              <p className="text-sm text-muted-foreground">Add payment method</p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle>Billing History</CardTitle>
-                  <CardDescription>View your past invoices</CardDescription>
+                  <CardDescription>View your past transactions</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {[
-                      { date: 'Nov 15, 2024', amount: '$49.00', status: 'Paid' },
-                      { date: 'Oct 15, 2024', amount: '$49.00', status: 'Paid' },
-                      { date: 'Sep 15, 2024', amount: '$49.00', status: 'Paid' },
-                    ].map((invoice, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-xl">
-                        <div>
-                          <p className="font-medium">{invoice.date}</p>
-                          <p className="text-sm text-muted-foreground">{invoice.amount}</p>
+                  {isLoading ? (
+                    <div className="text-center py-8">Loading...</div>
+                  ) : billingData?.billingHistory?.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No billing history yet</p>
+                      <p className="text-sm mt-2">Your transactions will appear here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {billingData?.billingHistory?.map((invoice: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-xl">
+                          <div>
+                            <p className="font-medium">{invoice.date}</p>
+                            <p className="text-sm text-muted-foreground">{invoice.amount}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary">{invoice.status}</Badge>
+                            <Button variant="ghost" size="sm">Download</Button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="secondary">{invoice.status}</Badge>
-                          <Button variant="ghost" size="sm">Download</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>

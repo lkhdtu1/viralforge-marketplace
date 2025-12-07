@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   Briefcase,
   ClipboardList,
-  Search
+  Search,
+  Plus
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,7 +45,7 @@ import {
 } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { usersApi } from '@/lib/api';
+import { usersApi, messagesApi } from '@/lib/api';
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -63,18 +64,30 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-  { href: '/products', label: 'Products' },
+  { href: '/services', label: 'Services' },
   { href: '/discover', label: 'Discover' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
 ];
 
-const authNavLinks: NavLink[] = [
-  { href: '/', label: 'Home' },
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/discover', label: 'Discover', icon: Zap },
-  { href: '/messages', label: 'Messages', icon: MessageSquare },
-];
+const getAuthNavLinks = (userRole?: string): NavLink[] => {
+  const baseLinks: NavLink[] = [
+    { href: '/', label: 'Home' },
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/discover', label: 'Discover', icon: Zap },
+    { href: '/about', label: 'About' },
+    { href: '/messages', label: 'Messages', icon: MessageSquare },
+  ];
+  
+  // Add role-specific links
+  if (userRole === 'creator') {
+    baseLinks.splice(2, 0, { href: '/services/manage', label: 'My Services', icon: Briefcase });
+  } else if (userRole === 'brand') {
+    baseLinks.splice(2, 0, { href: '/campaigns/new', label: 'Create Campaign', icon: Plus });
+  }
+  
+  return baseLinks;
+};
 
 export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -82,11 +95,16 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { itemCount } = useCart();
-  const { logout } = useAuth();
+  const { logout, user: authUser } = useAuth();
+  const currentUser = user || authUser;
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Get role-based navigation links
+  const roleBasedNavLinks = getAuthNavLinks(currentUser?.role);
 
   const handleLogout = () => {
     logout();
@@ -104,9 +122,11 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
       setIsSearching(true);
       try {
         const results = await usersApi.search(searchQuery);
-        setSearchResults(results);
+        // Ensure results is an array
+        setSearchResults(Array.isArray(results) ? results : []);
       } catch (error) {
         console.error('Search failed:', error);
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -127,6 +147,26 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // Load unread messages count for notifications
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const loadUnreadCount = async () => {
+      try {
+        const unreadMessages = await messagesApi.getInbox();
+        setUnreadCount(Array.isArray(unreadMessages) ? unreadMessages.length : 0);
+      } catch (error) {
+        // Silently fail - notifications are not critical
+        console.error('Failed to load unread count:', error);
+      }
+    };
+
+    loadUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user]);
 
   const isLandingPage = location.pathname === '/';
 
@@ -150,7 +190,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-1">
-          {(isAuthenticated ? authNavLinks : navLinks).map((link) => (
+          {(isAuthenticated ? roleBasedNavLinks : navLinks).map((link) => (
             <Link key={link.href} to={link.href}>
               <Button
                 variant="ghost"
@@ -192,23 +232,28 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
                       <CommandEmpty>No users found.</CommandEmpty>
                     ) : (
                       <CommandGroup>
-                        {searchResults.map((result) => (
+                        {searchResults.map((result: any) => (
                           <CommandItem
                             key={result.id}
-                            className="flex items-center gap-3 p-2"
+                            className="flex items-center gap-3 p-2 cursor-pointer"
+                            onSelect={() => {
+                              navigate(`/creators/${result.id}`);
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                            }}
                           >
                             <Avatar className="w-8 h-8">
                               <AvatarImage src={result.avatar} />
                               <AvatarFallback>
-                                {result.displayName?.charAt(0) || 'U'}
+                                {result.displayName?.charAt(0) || result.email?.charAt(0) || 'U'}
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium truncate">
-                                {result.displayName || 'User'}
+                                {result.displayName || result.email || 'User'}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                {result.role}
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {result.role?.toLowerCase() || 'User'}
                               </p>
                             </div>
                             {result.isVerified && (
@@ -271,29 +316,33 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
           {isAuthenticated ? (
             <>
               {/* Notifications */}
-              <Button variant="ghost" size="icon-sm" className="relative" aria-label="Notifications">
-                <Bell className="h-4 w-4" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                  3
-                </span>
-              </Button>
+              <Link to="/messages">
+                <Button variant="ghost" size="icon-sm" className="relative" aria-label="Notifications">
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
 
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon-sm" className="rounded-full" aria-label="User menu">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.displayName || user?.name} />
+                      <AvatarImage src={currentUser?.avatar || user?.avatar} alt={currentUser?.displayName || user?.displayName || currentUser?.name || user?.name} />
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {(user?.displayName || user?.name)?.charAt(0) || 'U'}
+                        {(currentUser?.displayName || user?.displayName || currentUser?.name || user?.name)?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.displayName || user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p className="text-sm font-medium">{currentUser?.displayName || currentUser?.name || user?.displayName || user?.name}</p>
+                    <p className="text-xs text-muted-foreground">{currentUser?.email || user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -359,7 +408,7 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
             className="md:hidden glass border-t"
           >
             <div className="container mx-auto px-4 py-4 space-y-2">
-              {(isAuthenticated ? authNavLinks : navLinks).map((link) => (
+              {(isAuthenticated ? roleBasedNavLinks : navLinks).map((link) => (
                 <Link key={link.href} to={link.href} className="block">
                   <Button
                     variant="ghost"

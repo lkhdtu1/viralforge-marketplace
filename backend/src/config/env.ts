@@ -37,6 +37,12 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
   
+  // AI Configuration
+  OPENAI_API_KEY: z.string().optional(),
+  USE_LOCAL_LLM: z.string().transform(val => val === 'true').default('false'),
+  OLLAMA_URL: z.string().url().optional(),
+  OLLAMA_MODEL: z.string().optional(),
+  
   REDIS_URL: z.string().url().optional(),
   
   ELASTICSEARCH_URL: z.string().url().optional(),

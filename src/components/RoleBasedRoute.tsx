@@ -18,5 +18,13 @@ export default function RoleBasedRoute() {
     return <Navigate to="/auth" replace />;
   }
   
-  return user.role === 'creator' ? <CreatorDashboard /> : <BrandDashboard />;
+  // Ensure proper role-based routing
+  if (user.role === 'creator' || user.role === 'CREATOR') {
+    return <CreatorDashboard />;
+  } else if (user.role === 'brand' || user.role === 'BRAND' || user.role === 'admin' || user.role === 'ADMIN') {
+    return <BrandDashboard />;
+  }
+  
+  // Default fallback
+  return <BrandDashboard />;
 }

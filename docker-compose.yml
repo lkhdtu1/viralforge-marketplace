@@ -9,7 +9,8 @@ services:
       POSTGRES_PASSWORD: viralforge123
       POSTGRES_DB: viralforge
     ports:
-      - "5432:5432"
+      # Use a non-default host port to avoid conflicts with any local Postgres
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -17,6 +18,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - viralforge-network
 
   redis:
     image: redis:7-alpine
@@ -30,7 +33,109 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - viralforge-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: viralforge-api
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      API_VERSION: v1
+      DATABASE_URL: postgresql://viralforge:viralforge123@postgres:5432/viralforge?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: sk_test_local_dev_jwt_secret_32_chars_min_123456
+      JWT_REFRESH_SECRET: sk_test_local_dev_refresh_secret_32_chars_123
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      STRIPE_SECRET_KEY: sk_test_1234567890abcdefghijklmnopqrstu
+      STRIPE_PUBLISHABLE_KEY: pk_test_1234567890abcdefghijklmnopq
+      STRIPE_WEBHOOK_SECRET: whsec_localdevplaceholder
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USER: local@example.com
+      SMTP_PASS: localpassword
+      EMAIL_FROM: noreply@viralforge.local
+      ELASTICSEARCH_URL: http://localhost:9200
+      ELASTICSEARCH_ENABLED: false
+      TYPESENSE_API_KEY: local-typesense-api-key
+      TYPESENSE_HOST: localhost
+      TYPESENSE_PORT: 8108
+      TYPESENSE_PROTOCOL: http
+      TYPESENSE_ENABLED: false
+      CORS_ORIGIN: http://localhost:5173,http://localhost:3000,http://localhost:8080
+      CSRF_ENABLED: true
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      FRONTEND_URL: http://localhost:5173
+      VERIFICATION_REDIRECT_URL: http://localhost:5173/auth/verify
+      RESET_PASSWORD_REDIRECT_URL: http://localhost:5173/auth/reset-password
+      VIRALITY_SCORE_BATCH_SIZE: 100
+      VIRALITY_SCORE_INTERVAL_MS: 60000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - ./backend/logs:/app/logs
+      - /app/node_modules
+    command: npm run dev
+    networks:
+      - viralforge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Cron worker for scheduled tasks
+  cron-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: viralforge-cron
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://viralforge:viralforge123@postgres:5432/viralforge?schema=public
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-local@example.com}
+      SMTP_PASS: ${SMTP_PASS:-localpassword}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@viralforge.local}
+      FRONTEND_URL: http://localhost:5173
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      USE_LOCAL_LLM: ${USE_LOCAL_LLM:-false}
+      OLLAMA_URL: ${OLLAMA_URL:-http://localhost:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - /app/node_modules
+    command: tsx src/workers/start-cron.ts
+    networks:
+      - viralforge-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  viralforge-network:
+    driver: bridge
