@@ -375,3 +375,5 @@ export function useCookieConsent() {
   return { getConsent, hasConsent };
 }
 
+
+

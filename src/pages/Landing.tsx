@@ -38,27 +38,27 @@ const staggerContainer = {
 
 const features = [
   {
-    icon: Users,
-    title: 'AI-Powered Matching',
-    description: 'Smart algorithms connect you with creators who perfectly align with your brand values.',
+    icon: Sparkles,
+    title: 'AI Tools Built for Creators',
+    description: 'Generate scripts, ideas, captions, thumbnails, and hashtags with AI-powered content tools.',
     gradient: 'from-blue-500/20 to-cyan-500/20'
   },
   {
     icon: TrendingUp,
-    title: 'Virality Tracking',
-    description: 'Real-time analytics and predictive virality scoring to maximize campaign impact.',
+    title: 'Curated Marketplace',
+    description: 'Access growth services: editing, shoutouts, brand kits, and trend research from verified vendors.',
     gradient: 'from-purple-500/20 to-pink-500/20'
   },
   {
     icon: Shield,
-    title: 'Secure Escrow',
-    description: 'Built-in payment protection ensures safe transactions for everyone.',
+    title: 'Secure Payments & Fast Delivery',
+    description: 'Built-in escrow protection and automated services with clear delivery timelines.',
     gradient: 'from-emerald-500/20 to-teal-500/20'
   },
   {
-    icon: Zap,
-    title: 'Instant Workflow',
-    description: 'Streamlined collaboration with in-app messaging and file sharing.',
+    icon: BarChart3,
+    title: 'Analytics Dashboards',
+    description: 'Track performance, monitor progress, and get personalized recommendations to grow faster.',
     gradient: 'from-orange-500/20 to-amber-500/20'
   },
 ];
@@ -72,25 +72,25 @@ const stats = [
 
 const testimonials = [
   {
-    content: "ViralForge transformed how we run influencer campaigns. The virality tracking is game-changing!",
-    author: 'Sarah Chen',
-    role: 'Marketing Director',
-    company: 'TechStartup',
+    content: "I gained 20K new followers in 2 months using their growth bundles.",
+    author: 'María A.',
+    role: 'TikTok Creator',
+    company: 'Content Creator',
     avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
     rating: 5,
   },
   {
-    content: "As a creator, I've tripled my brand partnerships. The platform makes everything seamless.",
-    author: 'Marcus Johnson',
-    role: 'Content Creator',
-    company: '500K+ followers',
+    content: "Best platform for creators starting from zero.",
+    author: 'Aiden L.',
+    role: 'Small Business Owner',
+    company: 'Entrepreneur',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
     rating: 5,
   },
   {
-    content: "The escrow feature gives me complete peace of mind. I know I'll get paid for my work.",
+    content: "The AI tools saved me hours every week. My content quality improved dramatically.",
     author: 'Emma Davis',
-    role: 'Micro-Influencer',
+    role: 'Content Creator',
     company: 'Lifestyle Niche',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
     rating: 5,
@@ -199,10 +199,10 @@ export default function Landing() {
               variants={fadeInUp}
               className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-[1.1] tracking-tight font-display"
             >
-              Where Creators &{' '}
-              <span className="gradient-text-hero">Brands</span>
+              Grow Your Influence.{' '}
+              <span className="gradient-text-hero">Faster.</span>
               <br />
-              Go Viral Together
+              Smarter. Effortlessly.
             </motion.h1>
 
             {/* Subheadline */}
@@ -210,27 +210,27 @@ export default function Landing() {
               variants={fadeInUp}
               className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
             >
-              The all-in-one marketplace connecting micro-influencers with brands. 
-              Launch campaigns, track virality, and grow together.
+              Your all-in-one platform for creator growth. AI-powered tools, curated services, and real analytics — everything you need to build an audience and monetize your content.
             </motion.p>
 
             {/* CTAs */}
             <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
               <Link to="/auth?mode=signup">
                 <Button variant="hero" size="xl" className="w-full sm:w-auto group">
-                  Start For Free
+                  🚀 Start Growing Today
                   <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="xl" 
-                className="w-full sm:w-auto gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80"
-                onClick={() => setIsDemoOpen(true)}
-              >
-                <Play className="w-5 h-5 fill-current" />
-                Watch Demo
-              </Button>
+              <Link to="/marketplace">
+                <Button 
+                  variant="outline" 
+                  size="xl" 
+                  className="w-full sm:w-auto gap-2 bg-background/50 backdrop-blur-sm border-border/50 hover:bg-background/80"
+                >
+                  👀 Explore Services
+                  <ArrowUpRight className="w-5 h-5" />
+                </Button>
+              </Link>
             </motion.div>
 
             {/* Stats */}
@@ -287,11 +287,11 @@ export default function Landing() {
               Features
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 font-display">
-              Everything You Need to{' '}
-              <span className="gradient-text">Go Viral</span>
+              Everything You Need{' '}
+              <span className="gradient-text">In One Platform</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Powerful tools for creators and brands to collaborate, create, and measure success.
+              AI content tools, growth services, creator dashboard, instant delivery, and trusted vendors — all in one place.
             </p>
           </motion.div>
 
@@ -472,16 +472,16 @@ export default function Landing() {
               Get Started Today
             </Badge>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 font-display">
-              Ready to <span className="gradient-text">Go Viral</span>?
+              Become the creator you know{' '}
+              <span className="gradient-text">you can be</span>
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join thousands of creators and brands already growing with ViralForge.
-              Start for free, no credit card required.
+              Start for free. No credit card needed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/auth?mode=signup">
                 <Button variant="hero" size="xl" className="group">
-                  Create Free Account
+                  Start Growing Today
                   <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>

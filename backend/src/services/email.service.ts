@@ -277,6 +277,261 @@ class EmailService {
   /**
    * Convert HTML to plain text (simple version)
    */
+  /**
+   * Welcome email for new users
+   */
+  async sendWelcomeEmail(
+    userEmail: string,
+    userName: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🚀 Welcome to your new creator superpower!</h1>
+            </div>
+            <div class="content">
+              <p>Hey ${userName},</p>
+              <p>Welcome to the platform built to help you grow faster.</p>
+              <p>Inside, you'll find AI tools, growth services, and insights to scale your influence.</p>
+              <p>Let's get started.</p>
+              <a href="${env.FRONTEND_URL}/dashboard" class="button">Start Here →</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: 'Welcome to your new creator superpower 🚀',
+      html,
+    });
+  }
+
+  /**
+   * Tools introduction email
+   */
+  async sendToolsIntroductionEmail(
+    userEmail: string,
+    userName: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .feature { margin: 20px 0; padding: 15px; background: white; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🛠️ The tools top creators are using today</h1>
+            </div>
+            <div class="content">
+              <p>Hey ${userName},</p>
+              <p>Here are the powerful tools that can transform your content creation:</p>
+              <div class="feature">
+                <h3>✨ AI Content Tools</h3>
+                <p>Generate scripts, ideas, captions, thumbnails, and hashtags instantly.</p>
+              </div>
+              <div class="feature">
+                <h3>📈 Growth Services</h3>
+                <p>Access editing, shoutouts, brand kits, and trend research from verified vendors.</p>
+              </div>
+              <div class="feature">
+                <h3>📊 Analytics Dashboard</h3>
+                <p>Track performance, monitor progress, and get personalized recommendations.</p>
+              </div>
+              <a href="${env.FRONTEND_URL}/marketplace" class="button">Try the Tools</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: 'The tools top creators are using today',
+      html,
+    });
+  }
+
+  /**
+   * Social proof email
+   */
+  async sendSocialProofEmail(
+    userEmail: string,
+    userName: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .testimonial { margin: 20px 0; padding: 15px; background: white; border-left: 4px solid #667eea; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🌟 See how creators are growing 5× faster</h1>
+            </div>
+            <div class="content">
+              <p>Hey ${userName},</p>
+              <p>Don't just take our word for it. Here's what creators are saying:</p>
+              <div class="testimonial">
+                <p><em>"I gained 20K new followers in 2 months using their growth bundles."</em></p>
+                <p><strong>— María A., TikTok Creator</strong></p>
+              </div>
+              <div class="testimonial">
+                <p><em>"Best platform for creators starting from zero."</em></p>
+                <p><strong>— Aiden L., Small Business Owner</strong></p>
+              </div>
+              <p>Ready to join them?</p>
+              <a href="${env.FRONTEND_URL}/auth?mode=signup" class="button">Start Your Growth</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: 'See how creators are growing 5× faster',
+      html,
+    });
+  }
+
+  /**
+   * Abandoned checkout email
+   */
+  async sendAbandonedCheckoutEmail(
+    userEmail: string,
+    userName: string,
+    checkoutUrl: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .discount { background: #e8f5e9; border: 2px solid #4caf50; padding: 15px; margin: 20px 0; text-align: center; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>💭 Still thinking about it?</h1>
+            </div>
+            <div class="content">
+              <p>Hey ${userName},</p>
+              <p>You were one step away from leveling up your content.</p>
+              <div class="discount">
+                <h3>🎁 Special Offer: 10% Off</h3>
+                <p>Complete your order now and save 10%!</p>
+              </div>
+              <a href="${checkoutUrl}" class="button">Complete Your Order</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: 'Still thinking about it?',
+      html,
+    });
+  }
+
+  /**
+   * Weekly newsletter template
+   */
+  async sendWeeklyNewsletter(
+    userEmail: string,
+    userName: string,
+    trendingSounds: string[],
+    viralHooks: string[],
+    growthTip: string
+  ): Promise<boolean> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .section { margin: 20px 0; padding: 15px; background: white; border-radius: 5px; }
+            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>📈 Creator Trends You Need This Week</h1>
+            </div>
+            <div class="content">
+              <p>Hey ${userName},</p>
+              <div class="section">
+                <h3>🎵 Trending Sounds</h3>
+                <ul>
+                  ${trendingSounds.map(sound => `<li>${sound}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="section">
+                <h3>🔥 Viral Hooks</h3>
+                <ul>
+                  ${viralHooks.map(hook => `<li>${hook}</li>`).join('')}
+                </ul>
+              </div>
+              <div class="section">
+                <h3>💡 Growth Tip of the Week</h3>
+                <p>${growthTip}</p>
+              </div>
+              <a href="${env.FRONTEND_URL}/marketplace" class="button">Try New Tools</a>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: userEmail,
+      subject: 'Creator Trends You Need This Week',
+      html,
+    });
+  }
+
   private htmlToText(html: string): string {
     return html
       .replace(/<[^>]*>/g, '')
@@ -289,4 +544,5 @@ class EmailService {
 }
 
 export default new EmailService();
+
 
