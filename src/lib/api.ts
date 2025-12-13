@@ -61,6 +61,14 @@ export const authApi = {
     const { data } = await api.get('/auth/me');
     return data.data.user;
   },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const { data } = await api.post('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return data;
+  },
 };
 
 export const usersApi = {
@@ -71,6 +79,11 @@ export const usersApi = {
 
   getById: async (id: string) => {
     const { data } = await api.get(`/users/${id}`);
+    return data.data.user;
+  },
+
+  updateProfile: async (payload: Partial<User> & { avatar?: string }) => {
+    const { data } = await api.put('/users/profile', payload);
     return data.data.user;
   },
 };
@@ -127,15 +140,15 @@ export const marketplaceApi = {
 };
 
 export const analyticsApi = {
-  getOverview: async (): Promise<OverviewMetrics> => {
+  getOverview: async (): Promise<OverviewMetrics & { userEngagement?: any }> => {
     const { data } = await api.get('/analytics/me');
     // Transform backend response to match frontend expectations
     const backendData = data.data;
     
     // Calculate metrics from events if available
     const eventCounts = backendData?.eventCounts || [];
-    const totalViews = eventCounts.find((e: any) => e.eventType === 'view')?._count || 0;
-    const totalEngagement = eventCounts.find((e: any) => e.eventType === 'engagement')?._count || 0;
+    const totalViews = backendData?.metrics?.totalViews || eventCounts.find((e: any) => e.eventType === 'view' || e.eventType === 'page_view')?._count || 0;
+    const totalEngagement = backendData?.metrics?.totalEngagement || eventCounts.find((e: any) => e.eventType === 'engagement' || e.eventType === 'like' || e.eventType === 'share')?._count || 0;
     
     // Get campaigns count from campaigns API
     let totalCampaigns = 0;
@@ -155,9 +168,20 @@ export const analyticsApi = {
       activeCampaigns,
       totalSpent: 0, // Would need to calculate from contracts/payments
       totalEarned: 0, // Would need to calculate from contracts/payments
-      averageEngagement: totalEngagement > 0 ? (totalEngagement / Math.max(totalViews, 1)) * 100 : 0,
+      averageEngagement: backendData?.metrics?.averageEngagement || (totalEngagement > 0 ? (totalEngagement / Math.max(totalViews, 1)) * 100 : 0),
       viralityScore: 0, // Would need to calculate from engagement metrics
+      userEngagement: backendData?.userEngagement,
+      totalViews,
+      totalEngagement,
     };
+  },
+
+  trackClick: async (target: string, targetId?: string, location?: string) => {
+    await api.post('/analytics/click', { target, targetId, location });
+  },
+
+  trackUsage: async (minutes: number) => {
+    await api.post('/analytics/usage', { minutes });
   },
 
   getCampaignAnalytics: async (campaignId: string, dateRange: string): Promise<AnalyticsData[]> => {
@@ -380,6 +404,19 @@ export const gamificationApi = {
   getTopBrands: async (limit: number = 10) => {
     const { data } = await api.get(`/gamification/top-brands?limit=${limit}`);
     return data.data.brands;
+  },
+};
+
+export const uploadApi = {
+  uploadAvatar: async (file: File): Promise<{ user: { avatar: string } }> => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const { data } = await api.post('/upload/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return data.data;
   },
 };
 

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { Layout } from "@/components/layout/Layout";
+import { useClickTracking } from "@/hooks/useClickTracking";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -43,15 +44,11 @@ import API from "./pages/API";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="viralforge-theme">
-      <AuthProvider>
-        <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+function AppContent() {
+  useClickTracking();
+  
+  return (
+    <BrowserRouter>
               <Routes>
                 {/* Public routes */}
                 <Route element={<Layout />}>
@@ -109,6 +106,18 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider defaultTheme="light" storageKey="viralforge-theme">
+      <AuthProvider>
+        <CartProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <AppContent />
           </TooltipProvider>
         </CartProvider>
       </AuthProvider>

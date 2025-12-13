@@ -19,6 +19,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { Image3D } from '@/components/Image3D';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -144,10 +145,12 @@ export default function About() {
                   <div className="p-1">
                     <Card className="border-0 shadow-soft overflow-hidden">
                       <CardContent className="p-0">
-                        <img
+                        <Image3D
                           src={image.url}
                           alt={image.alt}
-                          className="w-full h-64 object-cover hover-scale"
+                          className="w-full h-64"
+                          intensity="medium"
+                          enableHover={true}
                         />
                       </CardContent>
                     </Card>

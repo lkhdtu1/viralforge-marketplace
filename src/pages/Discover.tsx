@@ -12,7 +12,7 @@ import {
   Users,
   TrendingUp,
   DollarSign,
-  ShoppingCart,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ import {
 import { listingsApi, marketplaceApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { Image3D } from '@/components/Image3D';
 
 interface Creator {
   id: string;
@@ -189,13 +190,17 @@ export default function Discover() {
     }
   };
 
-  const handleAddToCart = (listing: Listing) => {
+  const handleBook = (listing: Listing) => {
     addItem({
       creatorId: listing.creator.id,
       creatorName: listing.creator.displayName || 'Creator',
       creatorAvatar: listing.creator.avatar || '',
       serviceType: listing.platform[0] as any,
       price: listing.price,
+    });
+    toast({
+      title: 'Service Booked',
+      description: `You've booked ${listing.title}. Check your bookings to proceed.`,
     });
   };
 
@@ -299,9 +304,9 @@ export default function Discover() {
             </SheetContent>
           </Sheet>
 
-          <Button variant="outline" onClick={() => navigate('/cart')}>
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Cart
+          <Button variant="outline" onClick={() => navigate('/bookings')}>
+            <Briefcase className="w-4 h-4 mr-2" />
+            My Bookings
           </Button>
         </div>
 
@@ -334,16 +339,25 @@ export default function Discover() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer"
+                    <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
                           onClick={() => navigate(`/creators/${creator.id}`)}>
                       <CardHeader>
                         <div className="flex items-start gap-4">
-                          <Avatar className="w-16 h-16">
-                            <AvatarImage src={creator.avatar} />
-                            <AvatarFallback>
-                              {creator.name?.charAt(0) || 'C'}
-                            </AvatarFallback>
-                          </Avatar>
+                          {creator.avatar ? (
+                            <Image3D
+                              src={creator.avatar}
+                              alt={creator.name || 'Creator'}
+                              className="w-16 h-16 rounded-full"
+                              intensity="low"
+                              enableHover={true}
+                            />
+                          ) : (
+                            <Avatar className="w-16 h-16">
+                              <AvatarFallback>
+                                {creator.name?.charAt(0) || 'C'}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <h3 className="font-semibold">
@@ -360,6 +374,17 @@ export default function Discover() {
                         </div>
                       </CardHeader>
                       <CardContent>
+                        <Button 
+                          variant="outline" 
+                          className="w-full mb-3 group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/messages?userId=${creator.id}`);
+                          }}
+                        >
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Contact
+                        </Button>
                         {creator.listings.length > 0 && (
                           <div>
                             <p className="text-xs text-muted-foreground mb-2">
@@ -408,12 +433,21 @@ export default function Discover() {
                       <CardHeader>
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={listing.creator.avatar} />
-                              <AvatarFallback>
-                                {listing.creator.displayName?.charAt(0) || 'C'}
-                              </AvatarFallback>
-                            </Avatar>
+                            {listing.creator.avatar ? (
+                              <Image3D
+                                src={listing.creator.avatar}
+                                alt={listing.creator.displayName || 'Creator'}
+                                className="w-10 h-10 rounded-full"
+                                intensity="low"
+                                enableHover={true}
+                              />
+                            ) : (
+                              <Avatar className="w-10 h-10">
+                                <AvatarFallback>
+                                  {listing.creator.displayName?.charAt(0) || 'C'}
+                                </AvatarFallback>
+                              </Avatar>
+                            )}
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-semibold text-sm">
@@ -463,9 +497,9 @@ export default function Discover() {
                               <DollarSign className="w-5 h-5 text-primary" />
                               <span className="text-2xl font-bold">${listing.price}</span>
                             </div>
-                            <Button onClick={() => handleAddToCart(listing)}>
-                              <ShoppingCart className="w-4 h-4 mr-2" />
-                              Add to Cart
+                            <Button onClick={() => handleBook(listing)} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all">
+                              <Briefcase className="w-4 h-4 mr-2" />
+                              Book Service
                             </Button>
                           </div>
                         </div>

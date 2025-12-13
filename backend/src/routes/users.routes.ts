@@ -18,6 +18,7 @@ const updateProfileSchema = z.object({
     displayName: z.string().optional(),
     bio: z.string().max(1000).optional(),
     website: z.string().url().optional(),
+    avatar: z.string().url().optional(),
     socialLinks: z.object({
       twitter: z.string().url().optional(),
       instagram: z.string().url().optional(),

@@ -301,17 +301,19 @@ export function Navbar({ isAuthenticated = false, user }: NavbarProps) {
             </Popover>
           )}
           
-          {/* Bookings Icon */}
-          <Link to="/bookings">
-            <Button variant="ghost" size="icon-sm" className="relative" aria-label="Service bookings">
-              <Briefcase className="h-4 w-4" />
-              {itemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center">
-                  {itemCount}
-                </Badge>
-              )}
-            </Button>
-          </Link>
+          {/* Bookings Icon - Dynamic based on user role */}
+          {isAuthenticated && (
+            <Link to={currentUser?.role === 'creator' ? '/services/manage' : '/bookings'}>
+              <Button variant="ghost" size="icon-sm" className="relative" aria-label={currentUser?.role === 'creator' ? 'My Services' : 'My Bookings'}>
+                <Briefcase className="h-4 w-4" />
+                {currentUser?.role !== 'creator' && itemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center">
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          )}
           
           {isAuthenticated ? (
             <>

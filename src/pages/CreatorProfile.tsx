@@ -17,15 +17,17 @@ import {
   TrendingUp,
   Users,
   DollarSign,
-  ShoppingCart
+  Briefcase
 } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usersApi, listingsApi } from '@/lib/api';
+import { Image3D } from '@/components/Image3D';
 
 const platformIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   instagram: Instagram,
@@ -62,15 +64,6 @@ export default function CreatorProfile() {
     loadCreator();
   }, [id]);
 
-  const handleAddToCart = (listing: any) => {
-    addItem({
-      creatorId: creator.id,
-      creatorName: creator.displayName || 'Creator',
-      creatorAvatar: creator.avatar || '',
-      serviceType: listing.platform[0] as any,
-      price: listing.price,
-    });
-  };
 
   if (!creator) {
     return (
@@ -97,12 +90,21 @@ export default function CreatorProfile() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col md:flex-row items-start gap-6"
           >
-            <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
-              <AvatarImage src={creator.avatar} alt={creator.displayName} />
-              <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                {creator.displayName?.charAt(0) || 'C'}
-              </AvatarFallback>
-            </Avatar>
+            {creator.avatar ? (
+              <Image3D
+                src={creator.avatar}
+                alt={creator.displayName || 'Creator'}
+                className="w-32 h-32 rounded-full border-4 border-background shadow-xl"
+                intensity="medium"
+                enableHover={true}
+              />
+            ) : (
+              <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
+                <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                  {creator.displayName?.charAt(0) || 'C'}
+                </AvatarFallback>
+              </Avatar>
+            )}
 
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -117,9 +119,9 @@ export default function CreatorProfile() {
               <p className="text-foreground mb-4 max-w-2xl">{creator.bio || 'No bio available'}</p>
 
               <div className="flex flex-wrap gap-3 mb-4">
-                <Button onClick={() => navigate(`/messages?userId=${creator.id}`)}>
+                <Button onClick={handleContact} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all">
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Message
+                  Contact Creator
                 </Button>
                 {creator.website && (
                   <Button variant="outline" asChild>
@@ -197,9 +199,9 @@ export default function CreatorProfile() {
                       <DollarSign className="w-5 h-5 text-primary" />
                       <span className="text-2xl font-bold">${listing.price}</span>
                     </div>
-                    <Button onClick={() => handleAddToCart(listing)}>
-                      <ShoppingCart className="w-4 h-4 mr-2" />
-                      Add to Cart
+                    <Button onClick={() => handleBook(listing)} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all">
+                      <Briefcase className="w-4 h-4 mr-2" />
+                      Book Service
                     </Button>
                   </div>
                 </CardContent>

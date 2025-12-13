@@ -25,7 +25,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { authApi, contractsApi } from '@/lib/api';
+import { authApi, contractsApi, usersApi } from '@/lib/api';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 export default function Settings() {
   const { toast } = useToast();
@@ -35,6 +36,8 @@ export default function Settings() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [billingData, setBillingData] = useState<any>(null);
+  const [paymentMethod, setPaymentMethod] = useState<any>(null);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   // Load user profile and billing data
   useEffect(() => {
@@ -75,6 +78,12 @@ export default function Settings() {
           contractsCount: Array.isArray(contracts) ? contracts.length : 0,
           billingHistory: [],
         });
+
+        // Load saved payment method (mock persistence via localStorage)
+        const savedPayment = localStorage.getItem('payment_method');
+        if (savedPayment) {
+          setPaymentMethod(JSON.parse(savedPayment));
+        }
       } catch (error) {
         console.error('Failed to load settings data:', error);
       } finally {
@@ -92,6 +101,10 @@ export default function Settings() {
     company: '',
     website: '',
   });
+  const [passwords, setPasswords] = useState({
+    current: '',
+    next: '',
+  });
 
   const [notifications, setNotifications] = useState({
     email: {
@@ -107,11 +120,84 @@ export default function Settings() {
     },
   });
 
-  const handleSaveProfile = () => {
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile has been saved successfully.',
-    });
+  // Notification preferences persistence (localStorage)
+  useEffect(() => {
+    const saved = localStorage.getItem('notification_prefs');
+    if (saved) {
+      try {
+        setNotifications(JSON.parse(saved));
+      } catch (error) {
+        console.error('Failed to parse notification prefs', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('notification_prefs', JSON.stringify(notifications));
+  }, [notifications]);
+
+  const handleSaveProfile = async () => {
+    try {
+      const [firstName, ...lastNameParts] = profile.name.split(' ');
+      const lastName = lastNameParts.join(' ') || '';
+      
+      await usersApi.updateProfile({
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        displayName: profile.name || undefined,
+        website: profile.website || undefined,
+        avatar: profile.avatar || undefined,
+      });
+      
+      await authApi.getCurrentUser().then(userData => {
+        setProfile({
+          name: userData.displayName || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
+          email: userData.email,
+          avatar: userData.avatar || '',
+          company: '',
+          website: userData.website || '',
+        });
+      });
+      
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been saved successfully.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: error.response?.data?.error?.message || 'Failed to update profile. Please try again.',
+      });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwords.current || !passwords.next) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing fields',
+        description: 'Please enter current and new password.',
+      });
+      return;
+    }
+
+    try {
+      await authApi.changePassword(passwords.current, passwords.next);
+      toast({
+        title: 'Password updated',
+        description: 'Your password has been changed successfully.',
+      });
+      setPasswords({ current: '', next: '' });
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Update failed',
+        description: error.response?.data?.error?.message || 'Unable to change password.',
+      });
+    }
   };
 
   const handleExportData = () => {
@@ -169,19 +255,14 @@ export default function Settings() {
                   <CardDescription>Update your personal details</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-center gap-6">
-                    <Avatar className="w-20 h-20">
-                      <AvatarImage src={profile.avatar} alt={profile.name} />
-                      <AvatarFallback className="text-2xl">
-                        {profile.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <Button variant="outline" size="sm">Change Photo</Button>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        JPG, PNG or GIF. Max 2MB.
-                      </p>
-                    </div>
+                  <div className="flex flex-col items-center gap-4">
+                    <AvatarUpload
+                      currentAvatar={profile.avatar}
+                      onAvatarChange={(newAvatar) => {
+                        setProfile({ ...profile, avatar: newAvatar });
+                      }}
+                      size="lg"
+                    />
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
@@ -314,27 +395,71 @@ export default function Settings() {
                       </div>
 
                       <h3 className="font-semibold mb-4">Payment Method</h3>
-                      {billingData?.plan?.price === 0 ? (
-                        <div className="p-4 border rounded-xl text-center text-muted-foreground">
-                          <p>No payment method required for free plan</p>
-                          <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/pricing'}>
-                            Add Payment Method
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between p-4 border rounded-xl">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
-                              <CreditCard className="w-4 h-4 text-primary-foreground" />
+                      <div className="p-4 border rounded-xl">
+                        {paymentMethod ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded flex items-center justify-center">
+                                <CreditCard className="w-4 h-4 text-primary-foreground" />
+                              </div>
+                              <div>
+                                <p className="font-medium">•••• •••• •••• {paymentMethod.last4}</p>
+                                <p className="text-sm text-muted-foreground">Exp {paymentMethod.exp}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">•••• •••• •••• ••••</p>
-                              <p className="text-sm text-muted-foreground">Add payment method</p>
+                            <Button variant="ghost" size="sm" onClick={() => setShowPaymentForm(true)}>Edit</Button>
+                          </div>
+                        ) : (
+                          <div className="text-center text-muted-foreground">
+                            <p>No payment method on file</p>
+                            <Button variant="outline" className="mt-4" onClick={() => setShowPaymentForm(true)}>
+                              Add Payment Method
+                            </Button>
+                          </div>
+                        )}
+
+                        {showPaymentForm && (
+                          <div className="mt-4 space-y-3">
+                            <div className="grid md:grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label>Cardholder Name</Label>
+                                <Input placeholder="Jane Doe" onChange={(e) => setPaymentMethod((prev: any) => ({ ...prev, name: e.target.value }))} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Card Number</Label>
+                                <Input placeholder="4242 4242 4242 4242" maxLength={19} onChange={(e) => setPaymentMethod((prev: any) => ({ ...prev, card: e.target.value }))} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Expiry</Label>
+                                <Input placeholder="12/28" maxLength={5} onChange={(e) => setPaymentMethod((prev: any) => ({ ...prev, exp: e.target.value }))} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>CVC</Label>
+                                <Input placeholder="123" maxLength={4} onChange={(e) => setPaymentMethod((prev: any) => ({ ...prev, cvc: e.target.value }))} />
+                              </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" onClick={() => setShowPaymentForm(false)}>Cancel</Button>
+                              <Button
+                                onClick={() => {
+                                  if (!paymentMethod?.card || paymentMethod?.card?.length < 4) {
+                                    toast({ variant: 'destructive', title: 'Invalid card', description: 'Please enter a valid card.' });
+                                    return;
+                                  }
+                                  const last4 = paymentMethod.card.slice(-4);
+                                  const saved = { ...paymentMethod, last4 };
+                                  setPaymentMethod(saved);
+                                  localStorage.setItem('payment_method', JSON.stringify(saved));
+                                  setShowPaymentForm(false);
+                                  toast({ title: 'Payment method saved', description: 'Your card was added successfully.' });
+                                }}
+                              >
+                                Save
+                              </Button>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm">Edit</Button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </>
                   )}
                 </CardContent>
@@ -394,6 +519,8 @@ export default function Settings() {
                         id="current-password"
                         type={showCurrentPassword ? 'text' : 'password'}
                         className="pl-10 pr-10"
+                        value={passwords.current}
+                        onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                       />
                       <button
                         type="button"
@@ -413,6 +540,8 @@ export default function Settings() {
                         id="new-password"
                         type={showNewPassword ? 'text' : 'password'}
                         className="pl-10 pr-10"
+                        value={passwords.next}
+                        onChange={(e) => setPasswords({ ...passwords, next: e.target.value })}
                       />
                       <button
                         type="button"
@@ -425,7 +554,7 @@ export default function Settings() {
                   </div>
 
                   <div className="flex justify-end">
-                    <Button>Update Password</Button>
+                    <Button onClick={handleChangePassword}>Update Password</Button>
                   </div>
                 </CardContent>
               </Card>

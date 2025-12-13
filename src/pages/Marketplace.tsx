@@ -27,6 +27,7 @@ import {
 import { listingsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/use-toast';
+import { Image3D } from '@/components/Image3D';
 
 interface Listing {
   id: string;
@@ -81,13 +82,17 @@ export default function Marketplace() {
     }
   };
 
-  const handleAddToCart = (listing: Listing) => {
+  const handleBook = (listing: Listing) => {
     addItem({
       creatorId: listing.creator.id,
       creatorName: listing.creator.displayName || 'Creator',
       creatorAvatar: listing.creator.avatar || '',
       serviceType: listing.platform[0] as any,
       price: listing.price,
+    });
+    toast({
+      title: 'Service Booked',
+      description: `You've booked ${listing.title}. Check your bookings to proceed.`,
     });
   };
 
@@ -133,9 +138,9 @@ export default function Marketplace() {
               <SelectItem value="twitter">Twitter/X</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={() => navigate('/cart')}>
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Cart
+          <Button variant="outline" onClick={() => navigate('/bookings')}>
+            <Briefcase className="w-4 h-4 mr-2" />
+            My Bookings
           </Button>
         </div>
 
@@ -143,7 +148,7 @@ export default function Marketplace() {
         {listings.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+              <Briefcase className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-xl font-semibold mb-2">No listings found</h3>
               <p className="text-muted-foreground">
                 Try adjusting your filters or check back later
@@ -158,16 +163,25 @@ export default function Marketplace() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
               >
-                <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                <Card className="h-full flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
                   <CardHeader>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={listing.creator.avatar} />
-                          <AvatarFallback>
-                            {listing.creator.displayName?.charAt(0) || 'C'}
-                          </AvatarFallback>
-                        </Avatar>
+                        {listing.creator.avatar ? (
+                          <Image3D
+                            src={listing.creator.avatar}
+                            alt={listing.creator.displayName || 'Creator'}
+                            className="w-10 h-10 rounded-full"
+                            intensity="low"
+                            enableHover={true}
+                          />
+                        ) : (
+                          <Avatar className="w-10 h-10">
+                            <AvatarFallback>
+                              {listing.creator.displayName?.charAt(0) || 'C'}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-sm">
@@ -220,9 +234,9 @@ export default function Marketplace() {
                           <DollarSign className="w-5 h-5 text-primary" />
                           <span className="text-2xl font-bold">${listing.price}</span>
                         </div>
-                        <Button onClick={() => handleAddToCart(listing)}>
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
+                        <Button onClick={() => handleBook(listing)} className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg hover:shadow-xl transition-all">
+                          <Briefcase className="w-4 h-4 mr-2" />
+                          Book Service
                         </Button>
                       </div>
                     </div>

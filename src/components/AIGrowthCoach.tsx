@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, TrendingUp, AlertCircle, Lightbulb, X, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles, TrendingUp, AlertCircle, Lightbulb, X, ChevronRight, MessageSquare, Zap, Target, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { suggestionsApi, gamificationApi, campaignsApi, listingsApi } from '@/lib/api';
+import { Input } from '@/components/ui/input';
+import { suggestionsApi, gamificationApi, campaignsApi, listingsApi, analyticsApi } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEngagementTracking } from '@/hooks/useEngagementTracking';
 
 interface Suggestion {
   type: 'action' | 'warning' | 'tip';
@@ -21,15 +23,45 @@ interface Suggestion {
 export function AIGrowthCoach() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { trackClick } = useEngagementTracking();
   const [isOpen, setIsOpen] = useState(true);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userLevel, setUserLevel] = useState<any>(null);
+  const [engagementStats, setEngagementStats] = useState<any>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessage, setChatMessage] = useState('');
 
   useEffect(() => {
     loadSuggestions();
     loadUserLevel();
+    loadEngagementStats();
+    
+    // Refresh suggestions every 5 minutes
+    const interval = setInterval(() => {
+      loadSuggestions();
+    }, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, [user]);
+
+  const loadEngagementStats = async () => {
+    if (!user) return;
+    
+    try {
+      const data = await analyticsApi.getOverview();
+      setEngagementStats(data.userEngagement);
+    } catch (error) {
+      console.error('Error loading engagement stats:', error);
+    }
+  };
+
+  const handleSuggestionClick = useCallback((suggestion: Suggestion) => {
+    trackClick('ai_suggestion', suggestion.title, window.location.pathname);
+    if (suggestion.action) {
+      suggestion.action.onClick();
+    }
+  }, [trackClick]);
 
   const loadSuggestions = async () => {
     if (!user) return;
@@ -160,7 +192,7 @@ export function AIGrowthCoach() {
         variant="outline"
         size="sm"
         onClick={() => setIsOpen(true)}
-        className="fixed right-4 bottom-4 z-50"
+        className="fixed right-6 bottom-32 z-30"
       >
         <Sparkles className="w-4 h-4 mr-2" />
         AI Coach
@@ -173,7 +205,7 @@ export function AIGrowthCoach() {
       initial={{ x: 400 }}
       animate={{ x: 0 }}
       exit={{ x: 400 }}
-      className="fixed right-4 bottom-4 z-50 w-96 max-h-[80vh] overflow-y-auto"
+        className="fixed right-6 bottom-32 z-30 w-96 max-h-[80vh] overflow-y-auto"
     >
       <Card className="shadow-2xl border-primary/20">
         <CardHeader className="pb-3">
@@ -197,32 +229,62 @@ export function AIGrowthCoach() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* User Level */}
-          {userLevel && (
-            <div className="bg-muted/50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Level {userLevel.level}</span>
-                <Badge variant="secondary">{userLevel.title}</Badge>
-              </div>
-              <div className="w-full bg-background rounded-full h-2 mb-1">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all"
-                  style={{
-                    width: `${(userLevel.xp / (userLevel.xp + userLevel.xpToNext)) * 100}%`,
-                  }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{userLevel.xp} XP</span>
-                <span>{userLevel.xpToNext} XP to next level</span>
-              </div>
-              {userLevel.rank > 0 && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Rank #{userLevel.rank} {user?.role === 'CREATOR' ? 'Creator' : 'Brand'}
+          {/* User Level & Engagement */}
+          <div className="space-y-3">
+            {userLevel && (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">Level {userLevel.level}</span>
+                  <Badge variant="secondary">{userLevel.title}</Badge>
                 </div>
-              )}
-            </div>
-          )}
+                <div className="w-full bg-background rounded-full h-2 mb-1">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all"
+                    style={{
+                      width: `${(userLevel.xp / (userLevel.xp + userLevel.xpToNext)) * 100}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{userLevel.xp} XP</span>
+                  <span>{userLevel.xpToNext} XP to next level</span>
+                </div>
+                {userLevel.rank > 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Rank #{userLevel.rank} {user?.role === 'CREATOR' ? 'Creator' : 'Brand'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Engagement Stats */}
+            {engagementStats && (
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg p-3 border border-primary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Your Activity</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Logins:</span>
+                    <span className="ml-1 font-semibold">{engagementStats.loginCount || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Clicks:</span>
+                    <span className="ml-1 font-semibold">{engagementStats.totalClicks || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Usage:</span>
+                    <span className="ml-1 font-semibold">{engagementStats.dailyUsageMinutes || 0}m</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Streak:</span>
+                    <span className="ml-1 font-semibold">{engagementStats.streakDays || 0} days</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Suggestions */}
           {isLoading ? (
@@ -275,7 +337,7 @@ export function AIGrowthCoach() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={suggestion.action.onClick}
+                                onClick={() => handleSuggestionClick(suggestion)}
                                 className="w-full"
                               >
                                 {suggestion.action.label}
@@ -291,9 +353,66 @@ export function AIGrowthCoach() {
               </AnimatePresence>
             </div>
           )}
+
+          {/* AI Chat Interface */}
+          {showChat && (
+            <div className="mt-4 border-t pt-4">
+              <div className="space-y-2 max-h-40 overflow-y-auto mb-2">
+                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
+                  AI: How can I help you grow today? Ask me anything about campaigns, listings, or strategies!
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask AI..."
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && chatMessage.trim()) {
+                      handleAIChat();
+                    }
+                  }}
+                  className="text-sm"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleAIChat}
+                  disabled={!chatMessage.trim()}
+                >
+                  <Zap className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowChat(!showChat)}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              {showChat ? 'Hide' : 'Chat with AI'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </motion.div>
   );
+
+  function handleAIChat() {
+    if (!chatMessage.trim()) return;
+    
+    trackClick('ai_chat', 'message_sent', window.location.pathname);
+    
+    toast({
+      title: 'AI Response',
+      description: 'AI chat feature is being enhanced! For now, check the suggestions above for personalized recommendations.',
+    });
+    
+    setChatMessage('');
+  }
 }
 

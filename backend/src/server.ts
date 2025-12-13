@@ -27,6 +27,7 @@ import adminRoutes from './routes/admin.routes';
 import webhookRoutes from './routes/webhooks.routes';
 import suggestionsRoutes from './routes/suggestions.routes';
 import gamificationRoutes from './routes/gamification.routes';
+import uploadRoutes from './routes/upload.routes';
 
 // Swagger/OpenAPI setup
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -152,6 +153,9 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files (uploads)
+app.use('/uploads', express.static('uploads'));
+
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
   res.json({
@@ -193,6 +197,7 @@ apiRouter.use('/search', searchRoutes);
 apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/suggest', suggestionsRoutes);
 apiRouter.use('/gamification', gamificationRoutes);
+apiRouter.use('/upload', uploadRoutes);
 
 app.use(`/api/${env.API_VERSION}`, apiRouter);
 

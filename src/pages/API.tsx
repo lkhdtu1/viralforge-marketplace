@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Image3D } from '@/components/Image3D';
+import heroBg from '@/assets/hero-bg.jpg';
 
 const apiFeatures = [
   { icon: Zap, title: 'Fast & Reliable', description: '99.9% uptime with global CDN' },
@@ -47,21 +49,31 @@ export default function API() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="text-center mb-12">
-            <Badge className="mb-4">Developer API</Badge>
-            <h1 className="text-4xl font-bold mb-4">Build with ViralForge</h1>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Integrate creator marketing into your platform with our powerful REST API. Access creators, campaigns, analytics, and more.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg">
-                <Key className="w-5 h-5 mr-2" />
-                Get API Key
-              </Button>
-              <Button variant="outline" size="lg">
-                <BookOpen className="w-5 h-5 mr-2" />
-                View Documentation
-              </Button>
+          <div className="grid md:grid-cols-2 gap-8 items-center mb-12">
+            <div className="text-left">
+              <Badge className="mb-4">Developer API</Badge>
+              <h1 className="text-4xl font-bold mb-4">Build with ViralForge</h1>
+              <p className="text-muted-foreground mb-6 max-w-2xl">
+                Integrate creator marketing into your platform with our powerful REST API. Access creators, campaigns, analytics, and more.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg">
+                  <Key className="w-5 h-5 mr-2" />
+                  Get API Key
+                </Button>
+                <Button variant="outline" size="lg">
+                  <BookOpen className="w-5 h-5 mr-2" />
+                  View Documentation
+                </Button>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <Image3D
+                src={heroBg}
+                alt="API hero"
+                intensity="high"
+                className="rounded-2xl shadow-2xl border border-primary/10"
+              />
             </div>
           </div>
 

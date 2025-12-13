@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, User, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Image3D } from '@/components/Image3D';
 
 const blogPosts = [
   {
@@ -82,10 +83,12 @@ export default function Blog() {
               >
                 <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300">
                   <div className="aspect-video overflow-hidden">
-                    <img
+                    <Image3D
                       src={post.image}
                       alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full"
+                      intensity="low"
+                      enableHover={true}
                     />
                   </div>
                   <CardHeader className="pb-2">

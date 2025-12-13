@@ -86,6 +86,7 @@ services:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
       - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
       - /app/node_modules
     command: npm run dev
     networks:

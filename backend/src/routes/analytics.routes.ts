@@ -112,10 +112,39 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const userId = req.user!.id;
     
+    // Get user engagement data
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        loginCount: true,
+        dailyUsageMinutes: true,
+        totalClicks: true,
+        streakDays: true,
+        lastActiveAt: true,
+        lastLoginAt: true,
+      },
+    });
+    
     // Get event counts by type
     const eventCounts = await prisma.analyticsEvent.groupBy({
       by: ['eventType'],
       where: { userId },
+      _count: true,
+    });
+    
+    // Get clicks count
+    const clicksCount = eventCounts.find(e => e.eventType === 'click')?._count || 0;
+    
+    // Get daily usage (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const dailyEvents = await prisma.analyticsEvent.groupBy({
+      by: ['createdAt'],
+      where: {
+        userId,
+        createdAt: { gte: sevenDaysAgo },
+      },
       _count: true,
     });
     
@@ -132,12 +161,93 @@ router.get('/me', authenticate, async (req, res, next) => {
       },
     });
     
+    // Calculate engagement metrics
+    const totalViews = eventCounts.find(e => e.eventType === 'view' || e.eventType === 'page_view')?._count || 0;
+    const totalEngagement = eventCounts.find(e => e.eventType === 'engagement' || e.eventType === 'like' || e.eventType === 'share')?._count || 0;
+    
     res.json({
       success: true,
       data: {
+        userEngagement: {
+          loginCount: user?.loginCount || 0,
+          dailyUsageMinutes: user?.dailyUsageMinutes || 0,
+          totalClicks: user?.totalClicks || clicksCount,
+          streakDays: user?.streakDays || 0,
+          lastActiveAt: user?.lastActiveAt,
+          lastLoginAt: user?.lastLoginAt,
+        },
         eventCounts,
         recentEvents,
+        metrics: {
+          totalViews,
+          totalEngagement,
+          averageEngagement: totalViews > 0 ? (totalEngagement / totalViews) * 100 : 0,
+        },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Track click event
+router.post('/click', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const { target, targetId, location } = req.body;
+    
+    // Track in analytics events
+    await prisma.analyticsEvent.create({
+      data: {
+        userId,
+        eventType: 'click',
+        eventData: { target, targetId, location },
+      },
+    });
+    
+    // Increment user click count
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        totalClicks: { increment: 1 },
+        lastActiveAt: new Date(),
+      },
+    });
+    
+    res.json({
+      success: true,
+      message: 'Click tracked',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Track daily usage
+router.post('/usage', authenticate, async (req, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const { minutes } = req.body;
+    
+    if (typeof minutes !== 'number' || minutes < 0) {
+      return res.status(400).json({
+        success: false,
+        error: { message: 'Invalid minutes value' },
+      });
+    }
+    
+    // Update daily usage
+    await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        dailyUsageMinutes: minutes,
+        lastActiveAt: new Date(),
+      },
+    });
+    
+    res.json({
+      success: true,
+      message: 'Usage tracked',
     });
   } catch (error) {
     next(error);

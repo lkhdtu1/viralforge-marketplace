@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Eye, Heart, Share2, DollarSign, Users, Calendar } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Eye, Heart, Share2, DollarSign, Users, Calendar, MousePointerClick, Clock, LogIn, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -57,7 +57,15 @@ export default function Analytics() {
     activeCampaigns: 0,
     averageEngagement: 0,
     viralityScore: 0,
+    userEngagement: {
+      loginCount: 0,
+      dailyUsageMinutes: 0,
+      totalClicks: 0,
+      streakDays: 0,
+    },
   };
+
+  const engagement = metrics.userEngagement || {};
 
   const chartData = [
     { name: 'Mon', views: metrics.totalViews || 0, engagement: metrics.totalEngagement || 0 },
@@ -103,6 +111,63 @@ export default function Analytics() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* User Engagement Metrics */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Login Count</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4 text-primary" />
+                    <span className="text-2xl font-bold">{engagement.loginCount?.toLocaleString() || 0}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Total logins</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Daily Usage</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="text-2xl font-bold">{engagement.dailyUsageMinutes || 0}</span>
+                    <span className="text-sm text-muted-foreground">min</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Today's usage</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Clicks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <MousePointerClick className="w-4 h-4 text-primary" />
+                    <span className="text-2xl font-bold">{engagement.totalClicks?.toLocaleString() || 0}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">All-time clicks</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Streak</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2">
+                    <Flame className="w-4 h-4 text-primary" />
+                    <span className="text-2xl font-bold">{engagement.streakDays || 0}</span>
+                    <span className="text-sm text-muted-foreground">days</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Current streak</p>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Key Metrics */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
@@ -249,6 +314,7 @@ export default function Analytics() {
     </div>
   );
 }
+
 
 
 

@@ -41,6 +41,14 @@ model User {
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
   
+  // User engagement tracking
+  loginCount    Int       @default(0) // Total number of logins
+  dailyUsageMinutes Int  @default(0) // Minutes used today
+  totalClicks   Int       @default(0) // Total clicks tracked
+  lastActiveAt  DateTime? // Last activity timestamp
+  streakDays    Int       @default(0) // Consecutive days of usage
+  lastStreakDate DateTime? // Last date streak was updated
+  
   // Relations
   campaigns     Campaign[]
   listings      Listing[]

@@ -186,10 +186,39 @@ export const loginUser = async (
     throw new AuthenticationError('Account is inactive');
   }
   
-  // Update last login
+  // Update last login and track engagement
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const lastStreakDate = user.lastStreakDate ? new Date(user.lastStreakDate) : null;
+  const isNewDay = !lastStreakDate || lastStreakDate < today;
+  
+  // Calculate streak
+  let streakDays = user.streakDays || 0;
+  if (isNewDay) {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (lastStreakDate && lastStreakDate.getTime() === yesterday.getTime()) {
+      // Consecutive day
+      streakDays += 1;
+    } else if (!lastStreakDate || lastStreakDate < yesterday) {
+      // Streak broken
+      streakDays = 1;
+    } else {
+      // Same day, don't increment
+      streakDays = streakDays || 1;
+    }
+  }
+  
   await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() },
+    data: {
+      lastLoginAt: now,
+      lastActiveAt: now,
+      loginCount: { increment: 1 },
+      streakDays,
+      lastStreakDate: isNewDay ? today : user.lastStreakDate,
+    },
   });
   
   // Generate tokens

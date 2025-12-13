@@ -13,6 +13,8 @@ import {
   verifyRefreshToken,
   generateTokens,
   storeRefreshToken,
+  verifyPassword,
+  hashPassword,
 } from '../services/auth.service';
 import { handleOAuthLogin } from '../services/oauth.service';
 import { authenticate } from '../middleware/auth';
@@ -204,6 +206,53 @@ router.post(
           accessToken,
           refreshToken,
         },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Change password (authenticated)
+router.post(
+  '/change-password',
+  authenticate,
+  rateLimiter,
+  sanitizeInput,
+  validate(z.object({
+    body: z.object({
+      currentPassword: z.string().min(6),
+      newPassword: z.string().min(6),
+    }),
+  })),
+  async (req, res, next) => {
+    try {
+      const userId = req.user!.id;
+      const { currentPassword, newPassword } = req.body;
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { passwordHash: true },
+      });
+
+      if (!user || !user.passwordHash) {
+        throw new AuthenticationError('Password change not available for this account');
+      }
+
+      const isValid = await verifyPassword(user.passwordHash, currentPassword);
+      if (!isValid) {
+        throw new AuthenticationError('Current password is incorrect');
+      }
+
+      const newHash = await hashPassword(newPassword);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash: newHash },
+      });
+
+      res.json({
+        success: true,
+        message: 'Password updated successfully',
       });
     } catch (error) {
       next(error);

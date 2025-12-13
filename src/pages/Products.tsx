@@ -27,6 +27,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { Image3D } from '@/components/Image3D';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -257,10 +258,12 @@ export default function Products() {
                   </div>
                   <div className={index % 2 === 1 ? 'md:order-1' : ''}>
                     <div className={`relative rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br ${product.gradient}`}>
-                      <img
+                      <Image3D
                         src={product.image}
                         alt={product.name}
-                        className="w-full h-80 object-cover"
+                        className="w-full h-80"
+                        intensity="medium"
+                        enableHover={true}
                       />
                     </div>
                   </div>
