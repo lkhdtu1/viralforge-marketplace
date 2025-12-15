@@ -357,10 +357,29 @@ export function AIGrowthCoach() {
           {/* AI Chat Interface */}
           {showChat && (
             <div className="mt-4 border-t pt-4">
-              <div className="space-y-2 max-h-40 overflow-y-auto mb-2">
-                <div className="text-xs text-muted-foreground p-2 bg-muted rounded">
-                  AI: How can I help you grow today? Ask me anything about campaigns, listings, or strategies!
-                </div>
+              <div className="space-y-2 max-h-60 overflow-y-auto mb-2 p-2 bg-muted/30 rounded">
+                {chatMessages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] p-2 rounded text-xs ${
+                      msg.role === 'user' 
+                        ? 'bg-primary text-primary-foreground rounded-br-sm' 
+                        : 'bg-background border rounded-bl-sm'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-background border p-2 rounded rounded-bl-sm text-xs">
+                      <div className="flex gap-1">
+                        <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-bounce" />
+                        <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-bounce" style={{animationDelay: '150ms'}} />
+                        <span className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-bounce" style={{animationDelay: '300ms'}} />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <Input
@@ -368,16 +387,17 @@ export function AIGrowthCoach() {
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyPress={(e) => {
-                    if (e.key === 'Enter' && chatMessage.trim()) {
+                    if (e.key === 'Enter' && chatMessage.trim() && !isTyping) {
                       handleAIChat();
                     }
                   }}
                   className="text-sm"
+                  disabled={isTyping}
                 />
                 <Button
                   size="sm"
                   onClick={handleAIChat}
-                  disabled={!chatMessage.trim()}
+                  disabled={!chatMessage.trim() || isTyping}
                 >
                   <Zap className="w-3 h-3" />
                 </Button>
@@ -402,17 +422,72 @@ export function AIGrowthCoach() {
     </motion.div>
   );
 
-  function handleAIChat() {
-    if (!chatMessage.trim()) return;
+  const [chatMessages, setChatMessages] = useState<Array<{id: string, role: 'user' | 'assistant', content: string, timestamp: Date}>>([
+    {
+      id: '1',
+      role: 'assistant', 
+      content: "Hi! I'm your AI Growth Coach. Ask me about campaign optimization, creator growth, or brand partnerships!",
+      timestamp: new Date()
+    }
+  ]);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+
+  async function handleAIChat() {
+    if (!chatMessage.trim() || isTyping) return;
     
     trackClick('ai_chat', 'message_sent', window.location.pathname);
     
-    toast({
-      title: 'AI Response',
-      description: 'AI chat feature is being enhanced! For now, check the suggestions above for personalized recommendations.',
-    });
-    
+    const userMessage = {
+      id: Date.now().toString(),
+      role: 'user' as const,
+      content: chatMessage,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
     setChatMessage('');
+    setIsTyping(true);
+    
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: chatMessage,
+          type: 'growth'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+
+      const data = await response.json();
+      const aiResponse = data.response || "I'm having trouble responding right now. Please try again!";
+      
+      const assistantMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant' as const,
+        content: aiResponse,
+        timestamp: new Date()
+      };
+
+      setChatMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Chat API error:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant' as const,
+        content: 'I\'m experiencing technical difficulties. Please try again in a moment!',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   }
 }
 

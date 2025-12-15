@@ -20,37 +20,54 @@ const quickReplies = [
   "How to create a campaign?"
 ];
 
-const responses: Record<string, string> = {
-  "how do i find creators": "You can find creators by visiting our Discover page! Use filters to search by category, platform, follower count, and engagement rate. Once you find a creator you like, you can add their services to your cart or send them a message directly.",
-  "what are the pricing plans": "We offer three plans:\n\n• **Starter (Free)** - Perfect for beginners with 5 campaign applications/month\n• **Pro ($49/mo)** - For serious creators with unlimited applications, verified badge, and priority support\n• **Enterprise ($199/mo)** - For agencies with team features, API access, and dedicated account manager",
-  "how does escrow work": "Our escrow system protects both brands and creators:\n\n1. Brand funds are held securely when a campaign starts\n2. Funds release in milestones as deliverables are approved\n3. If there's a dispute, our team mediates to ensure fair resolution",
-  "how to create a campaign": "Creating a campaign is easy:\n\n1. Go to your Dashboard\n2. Click 'Create Campaign'\n3. Fill in brief details, creative guidelines, and budget\n4. Set your timeline and target audience\n5. Publish and start receiving applications!",
-  "default": "I'm here to help! You can ask me about finding creators, pricing plans, escrow payments, or creating campaigns. What would you like to know?"
-};
+const SYSTEM_PROMPT = `You are Forge, the helpful AI assistant for ViralForge - a creator marketplace platform that connects brands with influencers and content creators.
 
-const getResponse = (input: string): string => {
-  const normalizedInput = input.toLowerCase().trim();
-  
-  for (const [key, value] of Object.entries(responses)) {
-    if (key !== 'default' && normalizedInput.includes(key)) {
-      return value;
+About ViralForge:
+- We're a marketplace where brands can find and collaborate with creators/influencers
+- We offer escrow payment protection for safe transactions
+- We have a virality scoring system to help predict content performance
+- We support multiple platforms: Instagram, YouTube, Twitter, TikTok
+- We offer campaign management tools and analytics
+
+Key Features:
+- Creator Discovery: Browse creators by category, platform, follower count, engagement rate
+- Campaign Builder: Create detailed briefs with budgets, timelines, and requirements  
+- Escrow System: Secure payments released in milestones as deliverables are approved
+- Analytics: Real-time campaign performance tracking and virality scoring
+- Messaging: Direct communication between brands and creators
+
+Pricing Plans:
+- Starter (Free): 5 campaign applications/month, basic features
+- Pro ($49/mo): Unlimited applications, verified badge, priority support, advanced analytics
+- Enterprise ($199/mo): Team features, API access, dedicated account manager, white-label options
+
+Founded by Mohamed Anaddam and Mohamed Tamis (Co-founders & CEOs), we're building the future of creator economy.
+
+Always be helpful, friendly, and focus on how ViralForge can solve their creator marketing needs. Keep responses concise but informative.`;
+
+const getAIResponse = async (userMessage: string, conversationHistory: Message[]): Promise<string> => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/chat/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: userMessage,
+        type: 'general'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('API request failed');
     }
+
+    const data = await response.json();
+    return data.response || "I'm having trouble responding right now. Please try again!";
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return "I'm experiencing some technical difficulties. Please try again in a moment!";
   }
-  
-  if (normalizedInput.includes('creator') || normalizedInput.includes('influencer')) {
-    return responses["how do i find creators"];
-  }
-  if (normalizedInput.includes('price') || normalizedInput.includes('cost') || normalizedInput.includes('plan')) {
-    return responses["what are the pricing plans"];
-  }
-  if (normalizedInput.includes('payment') || normalizedInput.includes('money') || normalizedInput.includes('escrow')) {
-    return responses["how does escrow work"];
-  }
-  if (normalizedInput.includes('campaign') || normalizedInput.includes('start')) {
-    return responses["how to create a campaign"];
-  }
-  
-  return responses["default"];
 };
 
 export function Chatbot() {
@@ -80,9 +97,9 @@ export function Chatbot() {
     }
   }, [isOpen]);
 
-  const handleSend = (text?: string) => {
+  const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
-    if (!messageText) return;
+    if (!messageText || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -95,18 +112,28 @@ export function Chatbot() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const response = getResponse(messageText);
+    try {
+      const response = await getAIResponse(messageText, messages);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
         timestamp: new Date()
       };
+
       setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: "Sorry, I'm having trouble right now. Please try again!",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 800 + Math.random() * 500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

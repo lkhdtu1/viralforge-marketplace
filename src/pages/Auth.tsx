@@ -54,7 +54,14 @@ export default function Auth() {
         title: 'Welcome back!',
         description: 'You have been logged in successfully.',
       });
-      navigate('/dashboard');
+      // The login function will update the user state, so we can access it after a brief delay
+      setTimeout(() => {
+        if (user?.role === 'creator') {
+          navigate('/creator-dashboard');
+        } else {
+          navigate('/brand-dashboard');
+        }
+      }, 100);
     } catch (error: any) {
       toast({
         title: 'Login failed',

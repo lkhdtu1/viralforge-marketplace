@@ -52,28 +52,16 @@ const values = [
 
 const team = [
   {
-    name: 'Alex Rivera',
-    role: 'CEO & Co-founder',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
-    bio: 'Former influencer marketing director at major brands.',
+    name: 'Mohamed Anaddam',
+    role: 'Co-founder & CEO',
+    avatar: '/mohamed-anaddam.jpeg',
+    bio: 'Visionary leader driving innovation in the creator economy and influencer marketing space.',
   },
   {
-    name: 'Jordan Lee',
-    role: 'CTO & Co-founder',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300',
-    bio: 'Built scalable platforms for Fortune 500 companies.',
-  },
-  {
-    name: 'Sam Chen',
-    role: 'Head of Creator Relations',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300',
-    bio: 'Content creator with 2M+ followers across platforms.',
-  },
-  {
-    name: 'Taylor Morgan',
-    role: 'VP of Product',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300',
-    bio: 'Product leader passionate about creator economy.',
+    name: 'Mohamed Tamis',
+    role: 'Co-founder & CEO',
+    avatar: '/Mohamed-tamis.jpeg',
+    bio: 'Strategic leader passionate about empowering creators and building authentic brand partnerships.',
   },
 ];
 
@@ -303,7 +291,7 @@ export default function About() {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto justify-items-center">
             {team.map((member, index) => (
               <motion.div
                 key={index}

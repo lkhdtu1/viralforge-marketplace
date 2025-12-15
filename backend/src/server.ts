@@ -28,6 +28,7 @@ import webhookRoutes from './routes/webhooks.routes';
 import suggestionsRoutes from './routes/suggestions.routes';
 import gamificationRoutes from './routes/gamification.routes';
 import uploadRoutes from './routes/upload.routes';
+import chatRoutes from './routes/chat';
 
 // Swagger/OpenAPI setup
 import swaggerJsdoc from 'swagger-jsdoc';
@@ -198,6 +199,7 @@ apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/suggest', suggestionsRoutes);
 apiRouter.use('/gamification', gamificationRoutes);
 apiRouter.use('/upload', uploadRoutes);
+apiRouter.use('/chat', chatRoutes);
 
 app.use(`/api/${env.API_VERSION}`, apiRouter);
 

@@ -71,9 +71,11 @@ const navLinks: NavLink[] = [
 ];
 
 const getAuthNavLinks = (userRole?: string): NavLink[] => {
+  const dashboardHref = userRole === 'creator' ? '/creator-dashboard' : '/brand-dashboard';
+  
   const baseLinks: NavLink[] = [
     { href: '/', label: 'Home' },
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: dashboardHref, label: 'Dashboard', icon: LayoutDashboard },
     { href: '/discover', label: 'Discover', icon: Zap },
     { href: '/about', label: 'About' },
     { href: '/messages', label: 'Messages', icon: MessageSquare },

@@ -19,6 +19,8 @@ import Auth from "./pages/Auth";
 import Marketplace from "./pages/Marketplace";
 import Discover from "./pages/Discover";
 import CreatorProfile from "./pages/CreatorProfile";
+import BrandDashboard from "./pages/BrandDashboard";
+import CreatorDashboard from "./pages/CreatorDashboard";
 import CampaignBuilder from "./pages/CampaignBuilder";
 import Campaigns from "./pages/Campaigns";
 import CampaignDetails from "./pages/CampaignDetails";
@@ -90,6 +92,8 @@ function AppContent() {
                 {/* Protected routes */}
                 <Route element={<Layout />}>
                   <Route path="/dashboard" element={<RoleBasedRoute />} />
+                  <Route path="/brand-dashboard" element={<BrandDashboard />} />
+                  <Route path="/creator-dashboard" element={<CreatorDashboard />} />
                   <Route path="/campaigns" element={<Campaigns />} />
                   <Route path="/campaigns/new" element={<CampaignBuilder />} />
                   <Route path="/campaigns/:id" element={<CampaignDetails />} />
