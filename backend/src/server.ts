@@ -13,6 +13,7 @@ import {
 
 // Import routes
 import authRoutes from './routes/auth.routes';
+import mfaRoutes from './routes/mfa.routes';
 import userRoutes from './routes/users.routes';
 import campaignRoutes from './routes/campaigns.routes';
 import contractRoutes from './routes/contracts.routes';
@@ -185,6 +186,7 @@ apiRouter.use('/webhooks', webhookRouter);
 
 // Regular API routes
 apiRouter.use('/auth', authRoutes);
+apiRouter.use('/mfa', mfaRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/campaigns', campaignRoutes);
 apiRouter.use('/contracts', contractRoutes);

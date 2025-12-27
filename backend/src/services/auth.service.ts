@@ -160,11 +160,28 @@ export const registerUser = async (
 // Login user
 export const loginUser = async (
   email: string,
-  password: string
-): Promise<{ user: User; accessToken: string; refreshToken: string }> => {
+  password: string,
+  mfaToken?: string
+): Promise<{ user: User; accessToken: string; refreshToken: string; requiresMFA?: boolean }> => {
   // Find user
   const user = await prisma.user.findUnique({
     where: { email },
+    select: {
+      id: true,
+      email: true,
+      passwordHash: true,
+      isActive: true,
+      role: true,
+      displayName: true,
+      avatar: true,
+      mfaEnabled: true,
+      mfaSecret: true,
+      mfaBackupCodes: true,
+      lastLoginAt: true,
+      loginCount: true,
+      streakDays: true,
+      lastStreakDate: true,
+    },
   });
   
   if (!user) {
@@ -184,6 +201,33 @@ export const loginUser = async (
   
   if (!user.isActive) {
     throw new AuthenticationError('Account is inactive');
+  }
+
+  // Check if MFA is required
+  if (user.mfaEnabled && user.mfaSecret) {
+    if (!mfaToken) {
+      // Return special response indicating MFA is required
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          displayName: user.displayName,
+          avatar: user.avatar,
+        } as User,
+        accessToken: '',
+        refreshToken: '',
+        requiresMFA: true,
+      };
+    }
+
+    // Verify MFA token
+    const { mfaService } = await import('./mfa.service');
+    const mfaValid = await mfaService.verifyMFA(user.id, mfaToken);
+    
+    if (!mfaValid) {
+      throw new AuthenticationError('Invalid MFA code');
+    }
   }
   
   // Update last login and track engagement

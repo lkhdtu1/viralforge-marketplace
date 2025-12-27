@@ -119,6 +119,7 @@ const loginSchema = z.object({
   body: z.object({
     email: z.string().email(),
     password: z.string(),
+    mfaToken: z.string().optional(),
   }),
 });
 
@@ -189,22 +190,33 @@ router.post(
   // validate(loginSchema),
   async (req, res, next) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, mfaToken } = req.body;
       
-      const { user, accessToken, refreshToken } = await loginUser(email, password);
+      const result = await loginUser(email, password, mfaToken);
+      
+      // If MFA is required, return special response
+      if (result.requiresMFA) {
+        return res.json({
+          success: true,
+          data: {
+            requiresMFA: true,
+            message: 'MFA verification required',
+          },
+        });
+      }
       
       res.json({
         success: true,
         data: {
           user: {
-            id: user.id,
-            email: user.email,
-            role: user.role,
-            displayName: user.displayName,
-            avatar: user.avatar,
+            id: result.user.id,
+            email: result.user.email,
+            role: result.user.role,
+            displayName: result.user.displayName,
+            avatar: result.user.avatar,
           },
-          accessToken,
-          refreshToken,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
         },
       });
     } catch (error) {

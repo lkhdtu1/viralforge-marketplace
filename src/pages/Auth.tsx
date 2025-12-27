@@ -36,7 +36,8 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
 
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginForm, setLoginForm] = useState({ email: '', password: '', mfaToken: '' });
+  const [showMFA, setShowMFA] = useState(false);
   const [signupForm, setSignupForm] = useState({
     name: '',
     email: '',
@@ -49,20 +50,51 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      await login(loginForm.email, loginForm.password);
-      toast({
-        title: 'Welcome back!',
-        description: 'You have been logged in successfully.',
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password,
+          mfaToken: loginForm.mfaToken || undefined,
+        }),
       });
-      
-      // Get the updated user from localStorage or make an API call
-      // Since login updates the auth state, we can navigate immediately
-      // The AuthContext will handle the user state update
-      navigate('/dashboard');
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.data.requiresMFA) {
+          // Show MFA input
+          setShowMFA(true);
+          toast({
+            title: 'MFA Required',
+            description: 'Please enter your authenticator code',
+          });
+        } else {
+          // Complete login
+          localStorage.setItem('auth_token', data.data.accessToken);
+          localStorage.setItem('refresh_token', data.data.refreshToken);
+          
+          toast({
+            title: 'Welcome back!',
+            description: 'You have been logged in successfully.',
+          });
+          
+          navigate('/dashboard');
+        }
+      } else {
+        toast({
+          title: 'Login failed',
+          description: data.error?.message || 'Invalid credentials',
+          variant: 'destructive',
+        });
+      }
     } catch (error: any) {
       toast({
         title: 'Login failed',
-        description: error.response?.data?.message || 'Invalid credentials',
+        description: 'Network error occurred',
         variant: 'destructive',
       });
     } finally {
@@ -235,8 +267,26 @@ export default function Auth() {
                       </div>
                     </div>
 
+                    {showMFA && (
+                      <div className="space-y-2">
+                        <Label htmlFor="mfa-token">Authenticator Code</Label>
+                        <Input
+                          id="mfa-token"
+                          type="text"
+                          placeholder="000000"
+                          value={loginForm.mfaToken}
+                          onChange={(e) => setLoginForm({ ...loginForm, mfaToken: e.target.value })}
+                          maxLength={6}
+                          required={showMFA}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Enter the 6-digit code from your authenticator app
+                        </p>
+                      </div>
+                    )}
+
                     <Button type="submit" variant="hero" className="w-full" disabled={isLoading}>
-                      {isLoading ? 'Logging in...' : 'Log In'}
+                      {isLoading ? 'Logging in...' : showMFA ? 'Verify & Log In' : 'Log In'}
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </form>

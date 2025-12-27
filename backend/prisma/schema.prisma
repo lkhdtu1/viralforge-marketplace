@@ -49,6 +49,11 @@ model User {
   streakDays    Int       @default(0) // Consecutive days of usage
   lastStreakDate DateTime? // Last date streak was updated
   
+  // MFA (Multi-Factor Authentication)
+  mfaEnabled    Boolean   @default(false) // Is MFA enabled
+  mfaSecret     String?   // Encrypted TOTP secret
+  mfaBackupCodes String[] // Encrypted backup codes
+  
   // Relations
   campaigns     Campaign[]
   listings      Listing[]

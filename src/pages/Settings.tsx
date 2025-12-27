@@ -27,13 +27,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { authApi, contractsApi, usersApi } from '@/lib/api';
 import { AvatarUpload } from '@/components/AvatarUpload';
+import { MFASettings } from '@/components/MFASettings';
 
 export default function Settings() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [billingData, setBillingData] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<any>(null);
@@ -559,29 +559,7 @@ export default function Settings() {
                 </CardContent>
               </Card>
 
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Two-Factor Authentication</CardTitle>
-                  <CardDescription>Add an extra layer of security</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <Smartphone className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="font-medium">Authenticator App</p>
-                        <p className="text-sm text-muted-foreground">
-                          Use an app like Google Authenticator
-                        </p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={twoFactorEnabled}
-                      onCheckedChange={setTwoFactorEnabled}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <MFASettings />
             </motion.div>
           </TabsContent>
 
