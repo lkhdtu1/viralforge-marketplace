@@ -103,6 +103,12 @@ router.get('/avatars/:filename', (req, res) => {
     });
   }
 
+  // Add CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+
   res.sendFile(filePath, (err) => {
     if (err) {
       res.status(404).json({

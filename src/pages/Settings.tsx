@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,6 +56,7 @@ export default function Settings() {
           name: userData.displayName || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
           email: userData.email,
           avatar: userData.avatar || '',
+          bio: userData.bio || '',
           company: '',
           website: userData.website || '',
         });
@@ -98,6 +100,7 @@ export default function Settings() {
     name: '',
     email: '',
     avatar: '',
+    bio: '',
     company: '',
     website: '',
   });
@@ -145,6 +148,7 @@ export default function Settings() {
         firstName: firstName || undefined,
         lastName: lastName || undefined,
         displayName: profile.name || undefined,
+        bio: profile.bio || undefined,
         website: profile.website || undefined,
         avatar: profile.avatar || undefined,
       });
@@ -154,6 +158,7 @@ export default function Settings() {
           name: userData.displayName || `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User',
           email: userData.email,
           avatar: userData.avatar || '',
+          bio: userData.bio || '',
           company: '',
           website: userData.website || '',
         });
@@ -300,6 +305,17 @@ export default function Settings() {
                         onChange={(e) => setProfile({ ...profile, website: e.target.value })}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      placeholder="Tell us about yourself..."
+                      value={profile.bio}
+                      onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                      rows={4}
+                    />
                   </div>
 
                   <div className="flex justify-end">
