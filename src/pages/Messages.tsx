@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -51,6 +51,7 @@ interface Conversation {
 export default function Messages() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -79,6 +80,21 @@ export default function Messages() {
       return () => clearInterval(interval);
     }
   }, [selectedUserId]);
+
+  // Handle direct conversation start from creator profile
+  useEffect(() => {
+    const startConversation = location.state?.startConversation;
+    if (startConversation) {
+      setSelectedUserId(startConversation.userId);
+      setSelectedUser({
+        id: startConversation.userId,
+        displayName: startConversation.name,
+        avatar: startConversation.avatar
+      });
+      // Clear the state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

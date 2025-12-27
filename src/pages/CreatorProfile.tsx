@@ -47,9 +47,14 @@ export default function CreatorProfile() {
   const { addItem } = useCart();
 
   const handleContact = () => {
-    toast({
-      title: 'Contact Creator',
-      description: 'Messaging feature coming soon!',
+    navigate('/messages', { 
+      state: { 
+        startConversation: {
+          userId: creator.id,
+          name: creator.displayName,
+          avatar: creator.avatar
+        }
+      }
     });
   };
 
