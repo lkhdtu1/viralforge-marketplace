@@ -76,9 +76,8 @@ router.post(
         });
       }
 
-      // Process image
-      const processedPath = await processImage(req.file.path);
-      const fileUrl = getFileUrl(processedPath, 'listing');
+      // Don't process image, use original
+      const fileUrl = getFileUrl(req.file.path, 'listing');
 
       res.json({
         success: true,
@@ -126,6 +125,12 @@ router.get('/listings/:filename', (req, res) => {
       error: { message: 'Forbidden' },
     });
   }
+
+  // Add CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
 
   res.sendFile(filePath, (err) => {
     if (err) {

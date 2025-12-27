@@ -203,7 +203,17 @@ export default function CreatorProfile() {
                       src={listing.image}
                       alt={listing.title}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        console.error('Image failed to load:', listing.image);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                      onLoad={() => console.log('Image loaded successfully:', listing.image)}
                     />
+                  </div>
+                )}
+                {!listing.image && (
+                  <div className="h-48 bg-muted flex items-center justify-center">
+                    <span className="text-muted-foreground">No image</span>
                   </div>
                 )}
                 <CardHeader>

@@ -38,14 +38,10 @@ const listingStorage = multer.diskStorage({
   },
 });
 
-// File filter for images only
+// File filter - accept any file type
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-  if (allowedMimes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.'));
-  }
+  // Accept any file type
+  cb(null, true);
 };
 
 // Multer configuration
@@ -62,7 +58,7 @@ export const uploadListing = multer({
   storage: listingStorage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 10 * 1024 * 1024, // 10MB max
   },
 });
 
@@ -94,7 +90,7 @@ export async function processImage(filePath: string): Promise<string> {
 export function getFileUrl(filePath: string, type: 'avatar' | 'listing' = 'avatar'): string {
   const filename = path.basename(filePath);
   const folder = type === 'listing' ? 'listings' : 'avatars';
-  return `/uploads/${folder}/${filename}`;
+  return `http://localhost:3001/api/v1/upload/${folder}/${filename}`;
 }
 
 // Delete file

@@ -226,10 +226,10 @@ export default function CreatorListings() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
         toast({
           title: 'File too large',
-          description: 'Please select an image smaller than 5MB',
+          description: 'Please select a file smaller than 10MB',
           variant: 'destructive',
         });
         return;
@@ -345,14 +345,14 @@ export default function CreatorListings() {
                           Click to upload service image
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          PNG, JPG up to 5MB
+                          Any file type up to 10MB
                         </p>
                       </div>
                     )}
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="*"
                       onChange={handleImageChange}
                       className="hidden"
                     />
