@@ -204,6 +204,12 @@ export const loginUser = async (
   }
 
   // Check if MFA is required
+  console.log('MFA Check:', {
+    mfaEnabled: user.mfaEnabled,
+    hasMfaSecret: !!user.mfaSecret,
+    requiresMFA: user.mfaEnabled && user.mfaSecret,
+  });
+  
   if (user.mfaEnabled && user.mfaSecret) {
     if (!mfaToken) {
       // Return special response indicating MFA is required

@@ -50,51 +50,28 @@ export default function Auth() {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: loginForm.email,
-          password: loginForm.password,
-          mfaToken: loginForm.mfaToken || undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.data.requiresMFA) {
-          // Show MFA input
-          setShowMFA(true);
-          toast({
-            title: 'MFA Required',
-            description: 'Please enter your authenticator code',
-          });
-        } else {
-          // Complete login
-          localStorage.setItem('auth_token', data.data.accessToken);
-          localStorage.setItem('refresh_token', data.data.refreshToken);
-          
-          toast({
-            title: 'Welcome back!',
-            description: 'You have been logged in successfully.',
-          });
-          
-          navigate('/dashboard');
-        }
-      } else {
+      const result = await login(loginForm.email, loginForm.password, loginForm.mfaToken || undefined);
+      
+      if (result.requiresMFA) {
+        // Show MFA input
+        setShowMFA(true);
         toast({
-          title: 'Login failed',
-          description: data.error?.message || 'Invalid credentials',
-          variant: 'destructive',
+          title: 'MFA Required',
+          description: 'Please enter your authenticator code',
         });
+      } else {
+        // Complete login
+        toast({
+          title: 'Welcome back!',
+          description: 'You have been logged in successfully.',
+        });
+        
+        navigate('/dashboard');
       }
     } catch (error: any) {
       toast({
         title: 'Login failed',
-        description: 'Network error occurred',
+        description: error.message || 'Invalid credentials',
         variant: 'destructive',
       });
     } finally {
