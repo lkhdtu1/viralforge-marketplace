@@ -97,20 +97,27 @@ export default function CreatorListings() {
       
       // Upload image if present
       if (formData.image) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('image', formData.image);
-        
-        const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/upload/listing-image`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          },
-          body: formDataUpload,
-        });
-        
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          imageUrl = uploadData.data.imageUrl;
+        try {
+          const formDataUpload = new FormData();
+          formDataUpload.append('image', formData.image);
+          
+          const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/upload/listing-image`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            },
+            body: formDataUpload,
+          });
+          
+          if (uploadResponse.ok) {
+            const uploadData = await uploadResponse.json();
+            imageUrl = uploadData.data.imageUrl;
+            console.log('Upload successful:', imageUrl);
+          } else {
+            console.error('Upload failed:', await uploadResponse.text());
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
         }
       }
       
@@ -124,6 +131,8 @@ export default function CreatorListings() {
         engagement: formData.engagement ? parseFloat(formData.engagement) : undefined,
         image: imageUrl || undefined,
       };
+
+      console.log('Sending listing data:', listingData);
 
       if (editingListing) {
         await listingsApi.update(editingListing.id, listingData);

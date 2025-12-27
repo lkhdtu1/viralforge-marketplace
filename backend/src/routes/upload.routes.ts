@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth';
-import { upload, processImage, getFileUrl, deleteFile } from '../services/upload.service';
+import { upload, processImage, getFileUrl, deleteFile, uploadListing } from '../services/upload.service';
 import prisma from '../config/database';
 import logger from '../utils/logger';
 import path from 'path';
@@ -66,7 +66,7 @@ router.post(
 router.post(
   '/listing-image',
   authenticate,
-  upload.single('image'),
+  uploadListing.single('image'),
   async (req, res, next) => {
     try {
       if (!req.file) {
@@ -78,7 +78,7 @@ router.post(
 
       // Process image
       const processedPath = await processImage(req.file.path);
-      const fileUrl = getFileUrl(processedPath);
+      const fileUrl = getFileUrl(processedPath, 'listing');
 
       res.json({
         success: true,

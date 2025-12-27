@@ -5,16 +5,32 @@ import sharp from 'sharp';
 import crypto from 'crypto';
 import logger from '../utils/logger';
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+// Ensure uploads directories exist
+const avatarsDir = path.join(process.cwd(), 'uploads', 'avatars');
+const listingsDir = path.join(process.cwd(), 'uploads', 'listings');
+
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
+if (!fs.existsSync(listingsDir)) {
+  fs.mkdirSync(listingsDir, { recursive: true });
 }
 
-// Configure multer storage
-const storage = multer.diskStorage({
+// Configure multer storage for avatars
+const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    cb(null, avatarsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${crypto.randomUUID()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
+
+// Configure multer storage for listings
+const listingStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, listingsDir);
   },
   filename: (req, file, cb) => {
     const uniqueName = `${crypto.randomUUID()}${path.extname(file.originalname)}`;
@@ -34,7 +50,16 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
 
 // Multer configuration
 export const upload = multer({
-  storage,
+  storage: avatarStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  },
+});
+
+// Multer configuration for listings
+export const uploadListing = multer({
+  storage: listingStorage,
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB max
@@ -66,10 +91,10 @@ export async function processImage(filePath: string): Promise<string> {
 }
 
 // Get public URL for uploaded file
-export function getFileUrl(filePath: string): string {
+export function getFileUrl(filePath: string, type: 'avatar' | 'listing' = 'avatar'): string {
   const filename = path.basename(filePath);
-  // Always serve from /uploads/avatars to avoid leaking absolute paths
-  return `/uploads/avatars/${filename}`;
+  const folder = type === 'listing' ? 'listings' : 'avatars';
+  return `/uploads/${folder}/${filename}`;
 }
 
 // Delete file
