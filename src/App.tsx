@@ -2,12 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { Layout } from "@/components/layout/Layout";
 import { useClickTracking } from "@/hooks/useClickTracking";
+import { useEffect } from "react";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -30,6 +31,10 @@ import CreatorListings from "./pages/CreatorListings";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import Legal from "./pages/Legal";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+import GDPR from "./pages/GDPR";
 import Bookings from "./pages/Bookings";
 import Orders from "./pages/Orders";
 import Analytics from "./pages/Analytics";
@@ -47,11 +52,22 @@ import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function AppContent() {
   useClickTracking();
   
   return (
     <BrowserRouter>
+      <ScrollToTop />
               <Routes>
                 {/* Public routes */}
                 <Route element={<Layout />}>
@@ -68,10 +84,10 @@ function AppContent() {
                   <Route path="/creators/:id" element={<CreatorProfile />} />
                   <Route path="/bookings" element={<Bookings />} />
                   {/* Legal */}
-                  <Route path="/terms" element={<Legal />} />
-                  <Route path="/privacy" element={<Legal />} />
-                  <Route path="/cookies" element={<Legal />} />
-                  <Route path="/gdpr" element={<Legal />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/cookies" element={<Cookies />} />
+                  <Route path="/gdpr" element={<GDPR />} />
                   <Route path="/aup" element={<Legal />} />
                   <Route path="/dmca" element={<Legal />} />
                   {/* Company */}
