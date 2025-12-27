@@ -42,6 +42,7 @@ interface Listing {
   engagement?: number;
   status: string;
   featured: boolean;
+  image?: string;
   createdAt: string;
 }
 
@@ -436,48 +437,59 @@ export default function CreatorListings() {
                 animate={{ opacity: 1, y: 0 }}
               >
                 <Card>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <CardTitle>{listing.title}</CardTitle>
-                          <Badge variant={listing.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                            {listing.status}
-                          </Badge>
+                  <div className="flex">
+                    {listing.image && (
+                      <div className="w-32 h-32 flex-shrink-0">
+                        <img
+                          src={listing.image}
+                          alt={listing.title}
+                          className="w-full h-full object-cover rounded-l-lg"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <CardTitle>{listing.title}</CardTitle>
+                              <Badge variant={listing.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                                {listing.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {listing.description}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => toggleStatus(listing)}
+                            >
+                              {listing.status === 'ACTIVE' ? (
+                                <EyeOff className="w-4 h-4" />
+                              ) : (
+                                <Eye className="w-4 h-4" />
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEdit(listing)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleDelete(listing.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {listing.description}
-                        </p>
-                      </div>
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => toggleStatus(listing)}
-                        >
-                          {listing.status === 'ACTIVE' ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleEdit(listing)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDelete(listing.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
+                      </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-6 text-sm">
                       <div className="flex items-center gap-2">
@@ -503,6 +515,7 @@ export default function CreatorListings() {
                       )}
                     </div>
                   </CardContent>
+                    </div>
                 </Card>
               </motion.div>
             ))}
