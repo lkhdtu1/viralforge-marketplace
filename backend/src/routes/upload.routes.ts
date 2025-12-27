@@ -62,6 +62,35 @@ router.post(
   }
 );
 
+// Upload listing image
+router.post(
+  '/listing-image',
+  authenticate,
+  upload.single('image'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'No file uploaded' },
+        });
+      }
+
+      // Process image
+      const processedPath = await processImage(req.file.path);
+      const fileUrl = getFileUrl(processedPath);
+
+      res.json({
+        success: true,
+        data: { imageUrl: fileUrl },
+      });
+    } catch (error) {
+      logger.error('Error uploading listing image:', error);
+      next(error);
+    }
+  }
+);
+
 // Serve uploaded files
 router.get('/:filename', (req, res) => {
   const filename = req.params.filename;

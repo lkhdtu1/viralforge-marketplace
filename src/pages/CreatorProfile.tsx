@@ -40,19 +40,44 @@ const platformIcons: Record<string, React.ComponentType<{ className?: string }>>
 export default function CreatorProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [creator, setCreator] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { addItem } = useCart();
 
+  const handleContact = () => {
+    toast({
+      title: 'Contact Creator',
+      description: 'Messaging feature coming soon!',
+    });
+  };
+
+  const handleBook = (listing: any) => {
+    addItem({
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      creatorId: creator.id,
+      creatorName: creator.displayName,
+    });
+    toast({
+      title: 'Added to Cart',
+      description: `${listing.title} has been added to your cart.`,
+    });
+  };
+
   useEffect(() => {
     const loadCreator = async () => {
       if (!id) return;
+      console.log('Loading creator with ID:', id);
       try {
         const [userData, listingsData] = await Promise.all([
           usersApi.getById(id),
           listingsApi.getAll({ creatorId: id, status: 'ACTIVE' })
         ]);
+        console.log('Creator data:', userData);
+        console.log('Listings data:', listingsData);
         setCreator(userData);
         setListings(listingsData);
       } catch (error) {
@@ -99,12 +124,10 @@ export default function CreatorProfile() {
             className="flex flex-col md:flex-row items-start gap-6"
           >
             {creator.avatar ? (
-              <Image3D
+              <img
                 src={creator.avatar}
                 alt={creator.displayName || 'Creator'}
-                className="w-32 h-32 rounded-full border-4 border-background shadow-xl"
-                intensity="medium"
-                enableHover={true}
+                className="w-32 h-32 rounded-full border-4 border-background shadow-xl object-cover"
               />
             ) : (
               <Avatar className="w-32 h-32 border-4 border-background shadow-xl">
@@ -173,7 +196,16 @@ export default function CreatorProfile() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((listing: any) => (
-              <Card key={listing.id} className="hover:shadow-lg transition-shadow">
+              <Card key={listing.id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                {listing.image && (
+                  <div className="h-48 overflow-hidden">
+                    <img
+                      src={listing.image}
+                      alt={listing.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <CardTitle className="text-lg">{listing.title}</CardTitle>
                   <div className="flex gap-1 mt-2">

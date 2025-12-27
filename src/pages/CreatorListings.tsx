@@ -93,6 +93,27 @@ export default function CreatorListings() {
     e.preventDefault();
     
     try {
+      let imageUrl = '';
+      
+      // Upload image if present
+      if (formData.image) {
+        const formDataUpload = new FormData();
+        formDataUpload.append('image', formData.image);
+        
+        const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL}/upload/listing-image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+          body: formDataUpload,
+        });
+        
+        if (uploadResponse.ok) {
+          const uploadData = await uploadResponse.json();
+          imageUrl = uploadData.data.imageUrl;
+        }
+      }
+      
       const listingData = {
         title: formData.title,
         description: formData.description,
@@ -101,6 +122,7 @@ export default function CreatorListings() {
         platform: formData.platform,
         reach: formData.reach ? parseInt(formData.reach) : undefined,
         engagement: formData.engagement ? parseFloat(formData.engagement) : undefined,
+        image: imageUrl || undefined,
       };
 
       if (editingListing) {
@@ -490,32 +512,33 @@ export default function CreatorListings() {
                           </div>
                         </div>
                       </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-6 text-sm">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-primary" />
-                        <span className="font-semibold">${listing.price}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        {listing.platform.map((p) => (
-                          <Badge key={p} variant="outline">
-                            {p}
-                          </Badge>
-                        ))}
-                      </div>
-                      {listing.reach && (
-                        <span className="text-muted-foreground">
-                          {listing.reach.toLocaleString()} reach
-                        </span>
-                      )}
-                      {listing.engagement && (
-                        <span className="text-muted-foreground">
-                          {listing.engagement}% engagement
-                        </span>
-                      )}
+                      <CardContent>
+                        <div className="flex items-center gap-6 text-sm">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-primary" />
+                            <span className="font-semibold">${listing.price}</span>
+                          </div>
+                          <div className="flex gap-2">
+                            {listing.platform.map((p) => (
+                              <Badge key={p} variant="outline">
+                                {p}
+                              </Badge>
+                            ))}
+                          </div>
+                          {listing.reach && (
+                            <span className="text-muted-foreground">
+                              {listing.reach.toLocaleString()} reach
+                            </span>
+                          )}
+                          {listing.engagement && (
+                            <span className="text-muted-foreground">
+                              {listing.engagement}% engagement
+                            </span>
+                          )}
+                        </div>
+                      </CardContent>
                     </div>
-                  </CardContent>
-                    </div>
+                  </div>
                 </Card>
               </motion.div>
             ))}
