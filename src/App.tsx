@@ -43,6 +43,7 @@ import Guides from "./pages/Guides";
 import Community from "./pages/Community";
 import Partners from "./pages/Partners";
 import API from "./pages/API";
+import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,7 @@ function AppContent() {
                   <Route path="/partners" element={<Partners />} />
                   {/* Product */}
                   <Route path="/api" element={<API />} />
+                  <Route path="/chat" element={<Chat />} />
                 </Route>
 
                 {/* Auth routes */}

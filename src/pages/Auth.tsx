@@ -31,7 +31,7 @@ export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login, signup } = useAuth();
+  const { login, signup, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
@@ -54,14 +54,11 @@ export default function Auth() {
         title: 'Welcome back!',
         description: 'You have been logged in successfully.',
       });
-      // The login function will update the user state, so we can access it after a brief delay
-      setTimeout(() => {
-        if (user?.role === 'creator') {
-          navigate('/creator-dashboard');
-        } else {
-          navigate('/brand-dashboard');
-        }
-      }, 100);
+      
+      // Get the updated user from localStorage or make an API call
+      // Since login updates the auth state, we can navigate immediately
+      // The AuthContext will handle the user state update
+      navigate('/dashboard');
     } catch (error: any) {
       toast({
         title: 'Login failed',
