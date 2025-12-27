@@ -92,9 +92,32 @@ router.post(
 );
 
 // Serve uploaded files
-router.get('/:filename', (req, res) => {
+router.get('/avatars/:filename', (req, res) => {
   const filename = req.params.filename;
   const filePath = path.join(process.cwd(), 'uploads', 'avatars', filename);
+  
+  // Security: prevent directory traversal
+  if (!filePath.startsWith(path.join(process.cwd(), 'uploads'))) {
+    return res.status(403).json({
+      success: false,
+      error: { message: 'Forbidden' },
+    });
+  }
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).json({
+        success: false,
+        error: { message: 'File not found' },
+      });
+    }
+  });
+});
+
+// Serve listing images
+router.get('/listings/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(process.cwd(), 'uploads', 'listings', filename);
   
   // Security: prevent directory traversal
   if (!filePath.startsWith(path.join(process.cwd(), 'uploads'))) {

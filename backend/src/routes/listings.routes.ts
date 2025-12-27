@@ -21,6 +21,7 @@ const createListingSchema = z.object({
     reach: z.number().int().positive().optional(),
     engagement: z.number().min(0).max(100).optional(),
     campaignId: z.string().uuid().optional(),
+    image: z.string().optional(),
   }),
 });
 
@@ -35,6 +36,7 @@ const updateListingSchema = z.object({
     engagement: z.number().min(0).max(100).optional(),
     status: z.nativeEnum(ListingStatus).optional(),
     featured: z.boolean().optional(),
+    image: z.string().optional(),
   }),
 });
 
