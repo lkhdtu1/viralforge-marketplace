@@ -1,0 +1,63 @@
+graph TB
+    subgraph Host["🖥️ Host Machine"]
+        Docker["Docker Engine<br/>• Non-root User<br/>• Resource Limits<br/>• Network Isolation"]
+    end
+    
+    subgraph Network["🌐 Network Security"]
+        Bridge["Bridge Network<br/>• Isolated Containers<br/>• Internal Communication<br/>• No External Exposure"]
+        Firewall["Firewall Rules<br/>• Port Restrictions<br/>• IP Whitelisting<br/>• Traffic Filtering"]
+    end
+    
+    subgraph Containers["🐳 Secure Containers"]
+        Backend["Backend Container<br/>• Minimal Base Image<br/>• No Root User<br/>• Health Checks"]
+        Database[("PostgreSQL Container<br/>• Encrypted Connections<br/>• Strong Passwords<br/>• Backup Strategy")]
+        Redis[("Redis Container<br/>• Password Protected<br/>• No External Access<br/>• Memory Limits")]
+    end
+    
+    subgraph Secrets["🔑 Secrets Management"]
+        EnvVars["Environment Variables<br/>• No Hardcoded Secrets<br/>• .env Files<br/>• Secret Rotation"]
+        JWTSecret["JWT Secrets<br/>• 32+ Characters<br/>• Unique per Environment<br/>• Regular Rotation"]
+    end
+    
+    subgraph Monitoring["📊 Security Monitoring"]
+        Logs["Container Logs<br/>• Centralized Logging<br/>• Log Rotation<br/>• Error Tracking"]
+        Health["Health Checks<br/>• Container Status<br/>• Service Availability<br/>• Auto-restart"]
+    end
+    
+    subgraph Updates["🔄 Security Updates"]
+        Patches["Security Patches<br/>• Regular Updates<br/>• Vulnerability Scanning<br/>• Dependency Updates"]
+    end
+    
+    Host --> Network
+    Network --> Bridge
+    Bridge --> Firewall
+    Firewall --> Containers
+    
+    Containers --> Backend
+    Containers --> Database
+    Containers --> Redis
+    
+    Backend --> Secrets
+    Secrets --> EnvVars
+    Secrets --> JWTSecret
+    
+    Containers --> Monitoring
+    Monitoring --> Logs
+    Monitoring --> Health
+    
+    Host --> Updates
+    Updates --> Patches
+    
+    classDef hostStyle fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef networkStyle fill:#FFEBEE,stroke:#C62828,stroke-width:3px
+    classDef containerStyle fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    classDef secretStyle fill:#FFF3E0,stroke:#E65100,stroke-width:3px
+    classDef monitorStyle fill:#F3E5F5,stroke:#7B1FA2,stroke-width:3px
+    classDef updateStyle fill:#FFF4E1,stroke:#F57C00,stroke-width:3px
+    
+    class Docker hostStyle
+    class Bridge,Firewall networkStyle
+    class Backend,Database,Redis containerStyle
+    class EnvVars,JWTSecret secretStyle
+    class Logs,Health monitorStyle
+    class Patches updateStyle

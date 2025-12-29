@@ -1,0 +1,56 @@
+graph LR
+    subgraph Client["👤 Client"]
+        Browser["Browser<br/>(HTTPS)"]
+    end
+    
+    subgraph Edge["🛡️ Edge Security"]
+        CDN["CDN<br/>• SSL/TLS<br/>• DDoS Protection"]
+        WAF["WAF<br/>• Request Filtering<br/>• Bot Detection"]
+    end
+    
+    subgraph API["🚪 API Layer"]
+        Gateway["API Gateway<br/>• Rate Limiting<br/>• CORS Policy"]
+        Auth["Auth Middleware<br/>• JWT Validation<br/>• MFA Check"]
+        Validation["Input Validation<br/>• Zod Schemas<br/>• Sanitization"]
+    end
+    
+    subgraph Business["💼 Business Logic"]
+        Services["Business Services<br/>• Payment Processing<br/>• Contract Management"]
+        RBAC["Authorization<br/>• Role Checks<br/>• Permission Validation"]
+    end
+    
+    subgraph Storage["💾 Storage"]
+        Database[("PostgreSQL<br/>• Encrypted<br/>• Backed Up")]
+        Cache[("Redis<br/>• Session Storage<br/>• Rate Limit Data")]
+        Files["File Storage<br/>• Image Processing<br/>• Virus Scanning"]
+    end
+    
+    subgraph External["🌐 External"]
+        Stripe["Stripe<br/>• Webhook Verification<br/>• Payment Processing"]
+    end
+    
+    Browser -->|HTTPS| CDN
+    CDN -->|Filtered| WAF
+    WAF -->|Validated| Gateway
+    Gateway -->|Authenticated| Auth
+    Auth -->|Validated| Validation
+    Validation -->|Authorized| Services
+    Services -->|RBAC Check| RBAC
+    RBAC -->|Encrypted| Database
+    Services -->|Secure| Cache
+    Services -->|Scanned| Files
+    Services -->|Verified| Stripe
+    
+    classDef clientStyle fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef edgeStyle fill:#FFEBEE,stroke:#C62828,stroke-width:3px
+    classDef apiStyle fill:#E1F5FF,stroke:#0288D1,stroke-width:3px
+    classDef businessStyle fill:#F3E5F5,stroke:#7B1FA2,stroke-width:3px
+    classDef storageStyle fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    classDef externalStyle fill:#FFF4E1,stroke:#F57C00,stroke-width:3px
+    
+    class Browser clientStyle
+    class CDN,WAF edgeStyle
+    class Gateway,Auth,Validation apiStyle
+    class Services,RBAC businessStyle
+    class Database,Cache,Files storageStyle
+    class Stripe externalStyle

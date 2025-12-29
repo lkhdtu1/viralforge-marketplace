@@ -1,0 +1,82 @@
+graph TB
+    subgraph Clients["👥 Clients"]
+        WebApp["Web Application<br/>(React + Vite)"]
+        Mobile["Mobile Browser"]
+    end
+    
+    subgraph Security["🔒 Security Layer"]
+        WAF["Web Application Firewall"]
+        RateLimit["Rate Limiting"]
+        DDoS["DDoS Protection"]
+    end
+    
+    subgraph API["🚪 API Gateway"]
+        LoadBalancer["Load Balancer"]
+        ExpressAPI["Express API Server<br/>(Node.js)"]
+    end
+    
+    subgraph Auth["🔐 Authentication & Authorization"]
+        JWT["JWT Tokens"]
+        MFA["Multi-Factor Auth"]
+        OAuth["OAuth 2.0<br/>(Google, Twitter)"]
+        RBAC["Role-Based Access Control"]
+    end
+    
+    subgraph Services["⚙️ Core Services"]
+        Payment["Payment Service<br/>(Stripe Escrow)"]
+        Messaging["Messaging Service"]
+        Search["Search Service"]
+        Analytics["Analytics Service"]
+    end
+    
+    subgraph Data["💾 Data Layer"]
+        PostgreSQL[("PostgreSQL<br/>Primary Database")]
+        Redis[("Redis<br/>Cache & Sessions")]
+        Storage["File Storage<br/>(Uploads)"]
+    end
+    
+    subgraph External["🌐 External Services"]
+        Stripe["Stripe API"]
+        Email["SMTP Server"]
+        AI["OpenAI API"]
+    end
+    
+    WebApp --> WAF
+    Mobile --> WAF
+    WAF --> RateLimit
+    RateLimit --> DDoS
+    DDoS --> LoadBalancer
+    LoadBalancer --> ExpressAPI
+    ExpressAPI --> JWT
+    ExpressAPI --> MFA
+    ExpressAPI --> OAuth
+    ExpressAPI --> RBAC
+    ExpressAPI --> Payment
+    ExpressAPI --> Messaging
+    ExpressAPI --> Search
+    ExpressAPI --> Analytics
+    Payment --> PostgreSQL
+    Messaging --> PostgreSQL
+    Search --> PostgreSQL
+    Analytics --> PostgreSQL
+    ExpressAPI --> Redis
+    ExpressAPI --> Storage
+    Payment --> Stripe
+    ExpressAPI --> Email
+    ExpressAPI --> AI
+    
+    classDef clientStyle fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef securityStyle fill:#FFEBEE,stroke:#C62828,stroke-width:3px
+    classDef apiStyle fill:#E1F5FF,stroke:#0288D1,stroke-width:3px
+    classDef authStyle fill:#FFF3E0,stroke:#E65100,stroke-width:3px
+    classDef serviceStyle fill:#F3E5F5,stroke:#7B1FA2,stroke-width:3px
+    classDef dataStyle fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    classDef externalStyle fill:#FFF4E1,stroke:#F57C00,stroke-width:3px
+    
+    class WebApp,Mobile clientStyle
+    class WAF,RateLimit,DDoS securityStyle
+    class LoadBalancer,ExpressAPI apiStyle
+    class JWT,MFA,OAuth,RBAC authStyle
+    class Payment,Messaging,Search,Analytics serviceStyle
+    class PostgreSQL,Redis,Storage dataStyle
+    class Stripe,Email,AI externalStyle

@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant User as 👤 User
+    participant Frontend as Frontend
+    participant API as API Server
+    participant Auth as Auth Service
+    participant DB as PostgreSQL
+    participant Redis as Redis Cache
+    participant MFA as MFA Service
+    
+    User->>Frontend: Login (Email + Password)
+    Frontend->>API: POST /auth/login
+    API->>Auth: Validate Credentials
+    Auth->>DB: Query User (Hashed Password)
+    DB-->>Auth: User Data
+    
+    Auth->>Auth: Verify Argon2 Hash
+    Auth->>Redis: Check Rate Limit
+    Redis-->>Auth: Within Limits
+    
+    alt MFA Enabled
+        Auth->>MFA: Generate TOTP Challenge
+        MFA-->>Auth: TOTP Secret
+        Auth-->>API: Requires MFA
+        API-->>Frontend: MFA Required
+        Frontend->>User: Request MFA Code
+        User->>Frontend: Enter MFA Code
+        Frontend->>API: POST /auth/mfa-verify
+        API->>MFA: Verify TOTP Code
+        MFA-->>API: Code Valid
+    end
+    
+    Auth->>Auth: Generate JWT Tokens
+    Auth->>DB: Store Refresh Token
+    Auth->>Redis: Cache Session
+    Auth-->>API: Access + Refresh Tokens
+    API-->>Frontend: Tokens + User Data
+    Frontend->>Frontend: Store Tokens (Secure)
+    
+    Note over Frontend,Redis: Subsequent Requests
+    Frontend->>API: Request with JWT
+    API->>Auth: Validate JWT
+    Auth->>Redis: Check Token Blacklist
+    Redis-->>Auth: Token Valid
+    Auth->>DB: Check User Permissions
+    DB-->>Auth: Role & Permissions
+    Auth-->>API: Authorized
+    API-->>Frontend: Protected Resource

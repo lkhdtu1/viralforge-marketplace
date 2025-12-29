@@ -1,0 +1,39 @@
+graph TB
+    subgraph GDPR["📋 GDPR Compliance"]
+        Consent["Cookie Consent<br/>• Granular Controls<br/>• Opt-in/Opt-out<br/>• Consent Records"]
+        DataMin["Data Minimization<br/>• Collect Only Needed<br/>• Purpose Limitation<br/>• Retention Policies"]
+        Rights["User Rights<br/>• Right to Access<br/>• Right to Deletion<br/>• Data Portability"]
+        Breach["Breach Notification<br/>• 72-hour Reporting<br/>• User Notification<br/>• Impact Assessment"]
+    end
+    
+    subgraph Privacy["🔒 Privacy Protection"]
+        Encryption["Data Encryption<br/>• TLS 1.3 in Transit<br/>• AES-256 at Rest<br/>• Encrypted Backups"]
+        Anonymization["Data Anonymization<br/>• PII Masking<br/>• Pseudonymization<br/>• Analytics Anonymization"]
+        AccessControl["Access Controls<br/>• Least Privilege<br/>• Audit Logs<br/>• Role-Based Access"]
+    end
+    
+    subgraph DataOps["📊 Data Operations"]
+        Backup["Secure Backups<br/>• Encrypted Backups<br/>• Regular Schedule<br/>• Off-site Storage"]
+        Retention["Data Retention<br/>• Automated Deletion<br/>• Retention Policies<br/>• Compliance Periods"]
+        Portability["Data Portability<br/>• JSON Export<br/>• User Data Download<br/>• Account Deletion"]
+    end
+    
+    subgraph Monitoring["👁️ Privacy Monitoring"]
+        Audit["Audit Trails<br/>• Data Access Logs<br/>• Modification History<br/>• Compliance Reports"]
+        Alerts["Privacy Alerts<br/>• Unusual Access<br/>• Data Breach Detection<br/>• Compliance Violations"]
+    end
+    
+    GDPR --> Privacy
+    Privacy --> DataOps
+    DataOps --> Monitoring
+    Monitoring --> GDPR
+    
+    classDef gdprStyle fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    classDef privacyStyle fill:#E3F2FD,stroke:#1976D2,stroke-width:3px
+    classDef dataStyle fill:#FFF3E0,stroke:#E65100,stroke-width:3px
+    classDef monitorStyle fill:#F3E5F5,stroke:#7B1FA2,stroke-width:3px
+    
+    class Consent,DataMin,Rights,Breach gdprStyle
+    class Encryption,Anonymization,AccessControl privacyStyle
+    class Backup,Retention,Portability dataStyle
+    class Audit,Alerts monitorStyle

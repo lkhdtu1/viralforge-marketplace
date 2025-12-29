@@ -1,0 +1,55 @@
+graph TB
+    subgraph Input["📥 Input Security"]
+        WAF["Web Application Firewall<br/>• Request Filtering<br/>• SQL Injection Prevention<br/>• XSS Protection"]
+        RateLimit["Rate Limiting<br/>• 100 req/15min per IP<br/>• Redis-backed<br/>• Progressive Backoff"]
+        CSRF["CSRF Protection<br/>• Token Validation<br/>• Same-Site Cookies"]
+    end
+    
+    subgraph Auth["🔐 Authentication Security"]
+        Password["Password Security<br/>• Argon2 Hashing<br/>• Salt + Pepper<br/>• Minimum 12 chars"]
+        JWT["JWT Tokens<br/>• 15min Access Token<br/>• 7-day Refresh Token<br/>• Secure Storage"]
+        MFA["Multi-Factor Auth<br/>• TOTP (Google Authenticator)<br/>• Backup Codes<br/>• QR Code Generation"]
+        OAuth["OAuth 2.0<br/>• Google OAuth<br/>• Twitter OAuth<br/>• Secure Token Exchange"]
+    end
+    
+    subgraph Authorization["🛡️ Authorization"]
+        RBAC["Role-Based Access<br/>• BRAND Role<br/>• CREATOR Role<br/>• ADMIN Role"]
+        Permissions["Permission Checks<br/>• Route Guards<br/>• Resource Ownership<br/>• API Endpoint Protection"]
+    end
+    
+    subgraph Data["💾 Data Security"]
+        Encryption["Data Encryption<br/>• TLS 1.3 in Transit<br/>• Encrypted at Rest<br/>• Database Encryption"]
+        SQLInjection["SQL Injection Prevention<br/>• Prisma ORM<br/>• Parameterized Queries<br/>• Input Sanitization"]
+        PII["PII Protection<br/>• GDPR Compliance<br/>• Data Minimization<br/>• Right to Deletion"]
+    end
+    
+    subgraph Payment["💰 Payment Security"]
+        StripeEscrow["Stripe Escrow<br/>• Secure Payment Holding<br/>• Webhook Verification<br/>• Signature Validation"]
+        PCICompliance["PCI Compliance<br/>• No Card Storage<br/>• Token-based Payments<br/>• Secure Redirects"]
+    end
+    
+    subgraph Monitoring["📊 Security Monitoring"]
+        Logging["Security Logging<br/>• Winston Logger<br/>• Failed Login Attempts<br/>• Suspicious Activity"]
+        Audit["Audit Trail<br/>• User Actions<br/>• Payment Transactions<br/>• Admin Operations"]
+    end
+    
+    Input --> Auth
+    Auth --> Authorization
+    Authorization --> Data
+    Data --> Payment
+    Data --> Monitoring
+    Payment --> Monitoring
+    
+    classDef inputStyle fill:#FFEBEE,stroke:#C62828,stroke-width:3px
+    classDef authStyle fill:#FFF3E0,stroke:#E65100,stroke-width:3px
+    classDef authzStyle fill:#E8EAF6,stroke:#3F51B5,stroke-width:3px
+    classDef dataStyle fill:#E8F5E9,stroke:#2E7D32,stroke-width:3px
+    classDef paymentStyle fill:#FFF4E1,stroke:#F57C00,stroke-width:3px
+    classDef monitorStyle fill:#F3E5F5,stroke:#7B1FA2,stroke-width:3px
+    
+    class WAF,RateLimit,CSRF inputStyle
+    class Password,JWT,MFA,OAuth authStyle
+    class RBAC,Permissions authzStyle
+    class Encryption,SQLInjection,PII dataStyle
+    class StripeEscrow,PCICompliance paymentStyle
+    class Logging,Audit monitorStyle

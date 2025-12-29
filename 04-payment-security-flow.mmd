@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant Brand as 👔 Brand
+    participant Frontend as Frontend App
+    participant API as API Server
+    participant Auth as Auth Service
+    participant Payment as Payment Service
+    participant Stripe as Stripe API
+    participant Escrow as Escrow System
+    participant Creator as 🎨 Creator
+    
+    Brand->>Frontend: Create Contract
+    Frontend->>API: POST /contracts
+    API->>Auth: Verify JWT Token
+    Auth-->>API: Token Valid
+    API->>Payment: Initialize Payment
+    
+    Payment->>Stripe: Create Payment Intent
+    Stripe-->>Payment: Payment Intent ID
+    Payment->>Escrow: Create Escrow Record
+    Escrow-->>Payment: Escrow Created
+    
+    Payment-->>API: Payment Intent Ready
+    API-->>Frontend: Payment Intent Client Secret
+    Frontend->>Stripe: Redirect to Stripe Checkout
+    Stripe-->>Brand: Payment Form (HTTPS)
+    Brand->>Stripe: Enter Payment Details
+    Stripe->>Stripe: Process Payment
+    
+    Stripe->>API: Webhook (Payment Succeeded)
+    API->>API: Verify Webhook Signature
+    API->>Escrow: Mark as FUNDED
+    Escrow-->>API: Escrow Funded
+    API->>Creator: Notify (Email/SMS)
+    
+    Creator->>API: Complete Work
+    API->>Escrow: Mark as COMPLETED
+    Escrow->>Payment: Release Funds
+    Payment->>Stripe: Transfer to Creator
+    Stripe-->>Payment: Transfer Complete
+    Payment->>Escrow: Mark as RELEASED
+    Escrow-->>Brand: Notify Completion
+    Escrow-->>Creator: Notify Payment
