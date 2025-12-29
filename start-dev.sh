@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# ViralForge Development Startup Script
-# Optimized for WSL / Linux local development
-
 set -euo pipefail
 
 echo "🚀 Starting ViralForge Marketplace (local dev)..."
@@ -42,7 +39,7 @@ fi
 
 # Force remove any existing containers with our names (in case they weren't created by compose)
 echo "🧹 Removing any existing containers with conflicting names..."
-docker rm -f viralforge-db viralforge-redis viralforge-api >/dev/null 2>&1 || true
+docker rm -f viralforge-db viralforge-redis viralforge-api viralforge-cron >/dev/null 2>&1 || true
 
 # Always update backend dependencies to ensure package-lock.json is in sync
 echo "📥 Updating backend dependencies (npm install in ./backend)..."
